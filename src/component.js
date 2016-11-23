@@ -5,12 +5,13 @@ import { bindActionCreators } from 'redux';
 import { connect } from 'react-redux';
 import reqwest from 'reqwest';
 import nprogress from 'nprogress';
+import Guid from 'guid';
 
 // local dependencies
 import helper from './helper.js';
 
-// expects all Actions, Routes and a 404 React component to be passed in
-export default function (Routes, Actions, Unknown) {
+// expects all historyObj, Routes, Actions and a 404 React component to be passed in
+export default function (historyObj, Routes, Actions, Unknown) {
 
     function mapDispatchToProps(dispatch) {
         return bindActionCreators(Actions, dispatch);
@@ -26,14 +27,11 @@ export default function (Routes, Actions, Unknown) {
 
         componentDidMount: function () {
             // listen for changes to the current location
-            this.handleUnlisten = appHistory.listen(function (location, action) {
+            this.handleUnlisten = historyObj.listen(function (location, action) {
 
                 // decide which path to call
                 var path;
-                const guid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-                    var r = Math.random()*16|0, v = c == 'x' ? r : (r&0x3|0x8);
-                    return v.toString(16);
-                });
+                const guid = Guid.raw();
                 if (location.pathname.indexOf('?') !== -1) {
                     path = location.pathname + '&guid=' + guid;
                 } else {
@@ -77,7 +75,7 @@ export default function (Routes, Actions, Unknown) {
         render: function () {
 
             // get the component from the router
-            var route = RouteHelper.match(Routes, this.props.location, Unknown);
+            var route = helper.match(Routes, this.props.location, Unknown);
             var Component = route.component;
 
             // we may not send all the props, depending if there is a reducerKey
