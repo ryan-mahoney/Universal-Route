@@ -1,21 +1,23 @@
 (function (global, factory) {
     if (typeof define === "function" && define.amd) {
-        define(['exports', 'react', 'path-to-regexp'], factory);
+        define(['exports', 'babel-runtime/core-js/object/keys', 'react', 'path-to-regexp'], factory);
     } else if (typeof exports !== "undefined") {
-        factory(exports, require('react'), require('path-to-regexp'));
+        factory(exports, require('babel-runtime/core-js/object/keys'), require('react'), require('path-to-regexp'));
     } else {
         var mod = {
             exports: {}
         };
-        factory(mod.exports, global.react, global.pathToRegexp);
+        factory(mod.exports, global.keys, global.react, global.pathToRegexp);
         global.helper = mod.exports;
     }
-})(this, function (exports, _react, _pathToRegexp) {
+})(this, function (exports, _keys, _react, _pathToRegexp) {
     'use strict';
 
     Object.defineProperty(exports, "__esModule", {
         value: true
     });
+
+    var _keys2 = _interopRequireDefault(_keys);
 
     var _react2 = _interopRequireDefault(_react);
 
@@ -49,7 +51,7 @@
             }, {});
 
             // we couldn't match anything
-            if (Object.keys(route).length == 0) {
+            if ((0, _keys2.default)(route).length == 0) {
                 return {
                     component: Unknown
                 };
@@ -62,7 +64,7 @@
         prepare: function prepare(Routes) {
 
             // loop over all routes
-            return Object.keys(Routes).map(function (route) {
+            return (0, _keys2.default)(Routes).map(function (route) {
                 var routeKeys = [];
                 var re = (0, _pathToRegexp2.default)(route, routeKeys);
                 var component, reducer;

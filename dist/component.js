@@ -1,16 +1,16 @@
 (function (global, factory) {
     if (typeof define === "function" && define.amd) {
-        define(['exports', 'react', 'redux', 'react-redux', 'reqwest', 'nprogress', 'guid', './helper.js'], factory);
+        define(['exports', 'babel-runtime/core-js/object/assign', 'babel-runtime/core-js/object/keys', 'react', 'redux', 'react-redux', 'reqwest', 'nprogress', 'guid', './helper.js'], factory);
     } else if (typeof exports !== "undefined") {
-        factory(exports, require('react'), require('redux'), require('react-redux'), require('reqwest'), require('nprogress'), require('guid'), require('./helper.js'));
+        factory(exports, require('babel-runtime/core-js/object/assign'), require('babel-runtime/core-js/object/keys'), require('react'), require('redux'), require('react-redux'), require('reqwest'), require('nprogress'), require('guid'), require('./helper.js'));
     } else {
         var mod = {
             exports: {}
         };
-        factory(mod.exports, global.react, global.redux, global.reactRedux, global.reqwest, global.nprogress, global.guid, global.helper);
+        factory(mod.exports, global.assign, global.keys, global.react, global.redux, global.reactRedux, global.reqwest, global.nprogress, global.guid, global.helper);
         global.component = mod.exports;
     }
-})(this, function (exports, _react, _redux, _reactRedux, _reqwest, _nprogress, _guid, _helper) {
+})(this, function (exports, _assign, _keys, _react, _redux, _reactRedux, _reqwest, _nprogress, _guid, _helper) {
     'use strict';
 
     Object.defineProperty(exports, "__esModule", {
@@ -86,7 +86,7 @@
                 var props = {};
                 if (route.reducerKey) {
                     // include all the action functions
-                    Object.keys(this.props).map(function (propKey) {
+                    (0, _keys2.default)(this.props).map(function (propKey) {
                         // if it is a function, must be a redux action function
                         if (Object.prototype.toString.call(this.props[propKey]) === '[object Function]') {
                             props[propKey] = this.props[propKey];
@@ -94,12 +94,12 @@
                     }.bind(this));
 
                     // put the reducerKey properties at the top of the props, ignore other keys
-                    Object.keys(this.props[route.reducerKey]).map(function (prop) {
+                    (0, _keys2.default)(this.props[route.reducerKey]).map(function (prop) {
                         props[prop] = this.props[route.reducerKey][prop];
                     }.bind(this));
                 } else {
                     // send all the props
-                    props = Object.assign(props, this.props, {});
+                    props = (0, _assign2.default)(props, this.props, {});
                 }
 
                 // return the component from the router with the appropriate props
@@ -107,6 +107,10 @@
             }
         }));
     };
+
+    var _assign2 = _interopRequireDefault(_assign);
+
+    var _keys2 = _interopRequireDefault(_keys);
 
     var _react2 = _interopRequireDefault(_react);
 

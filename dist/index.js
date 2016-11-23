@@ -1,22 +1,22 @@
 (function (global, factory) {
     if (typeof define === "function" && define.amd) {
-        define(['exports', './component.js', './helper.js', './reducer.js'], factory);
+        define(['exports', './component.js', './helper.js', './reducer.js', './action.js'], factory);
     } else if (typeof exports !== "undefined") {
-        factory(exports, require('./component.js'), require('./helper.js'), require('./reducer.js'));
+        factory(exports, require('./component.js'), require('./helper.js'), require('./reducer.js'), require('./action.js'));
     } else {
         var mod = {
             exports: {}
         };
-        factory(mod.exports, global.component, global.helper, global.reducer);
+        factory(mod.exports, global.component, global.helper, global.reducer, global.action);
         global.index = mod.exports;
     }
-})(this, function (exports, _component, _helper, _reducer) {
+})(this, function (exports, _component, _helper, _reducer, _action) {
     'use strict';
 
     Object.defineProperty(exports, "__esModule", {
         value: true
     });
-    exports.reducer = exports.helper = exports.component = undefined;
+    exports.changeHistory = exports.CHANGE_HISTORY = exports.reducer = exports.helper = exports.component = undefined;
 
     var _component2 = _interopRequireDefault(_component);
 
@@ -33,4 +33,6 @@
     exports.component = _component2.default;
     exports.helper = _helper2.default;
     exports.reducer = _reducer2.default;
+    exports.CHANGE_HISTORY = _action.CHANGE_HISTORY;
+    exports.changeHistory = _action.changeHistory;
 });
