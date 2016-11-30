@@ -15,7 +15,7 @@ const globalReducer = (currentState = initialState, action) => {
 
 export default function (reducers) {
 
-    const subReducers = combineReducers(Object.assign({}, reducers, {authorizationReducer});
+    const subReducers = combineReducers(Object.assign({}, reducers, {authorizationReducer}));
 
     return function (currentState = initialState, action) {
         var nextState = globalReducer(currentState, action);

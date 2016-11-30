@@ -1,6 +1,6 @@
 
 export const CHANGE_HISTORY = 'CHANGE_HISTORY';
-export const CHANGE_HISTORY = 'CHANGE_HISTORY_ERROR';
+export const CHANGE_HISTORY_ERROR = 'CHANGE_HISTORY_ERROR';
 
 export const changeHistory = (response) => ({
     type: CHANGE_HISTORY,

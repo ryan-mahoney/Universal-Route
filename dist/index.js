@@ -16,7 +16,7 @@
     Object.defineProperty(exports, "__esModule", {
         value: true
     });
-    exports.changeHistory = exports.CHANGE_HISTORY = exports.reducer = exports.helper = exports.component = undefined;
+    exports.actions = exports.reducer = exports.helper = exports.component = undefined;
 
     var _component2 = _interopRequireDefault(_component);
 
@@ -30,9 +30,15 @@
         };
     }
 
+    var actions = {
+        CHANGE_HISTORY: _action.CHANGE_HISTORY,
+        changeHistory: _action.changeHistory,
+        CHANGE_HISTORY_ERROR: _action.CHANGE_HISTORY_ERROR,
+        changeHistoryError: _action.changeHistoryError
+    };
+
     exports.component = _component2.default;
     exports.helper = _helper2.default;
     exports.reducer = _reducer2.default;
-    exports.CHANGE_HISTORY = _action.CHANGE_HISTORY;
-    exports.changeHistory = _action.changeHistory;
+    exports.actions = actions;
 });
