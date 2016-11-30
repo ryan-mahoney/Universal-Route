@@ -1,24 +1,26 @@
 (function (global, factory) {
     if (typeof define === "function" && define.amd) {
-        define(['exports', './component.js', './helper.js', './reducer.js', './action.js'], factory);
+        define(['exports', './RouterComponent.js', './AuthorizationComponent.js', './helper.js', './reducer.js', './action.js'], factory);
     } else if (typeof exports !== "undefined") {
-        factory(exports, require('./component.js'), require('./helper.js'), require('./reducer.js'), require('./action.js'));
+        factory(exports, require('./RouterComponent.js'), require('./AuthorizationComponent.js'), require('./helper.js'), require('./reducer.js'), require('./action.js'));
     } else {
         var mod = {
             exports: {}
         };
-        factory(mod.exports, global.component, global.helper, global.reducer, global.action);
+        factory(mod.exports, global.RouterComponent, global.AuthorizationComponent, global.helper, global.reducer, global.action);
         global.index = mod.exports;
     }
-})(this, function (exports, _component, _helper, _reducer, _action) {
+})(this, function (exports, _RouterComponent, _AuthorizationComponent, _helper, _reducer, _action) {
     'use strict';
 
     Object.defineProperty(exports, "__esModule", {
         value: true
     });
-    exports.actions = exports.reducer = exports.helper = exports.component = undefined;
+    exports.actions = exports.reducer = exports.helper = exports.AuthorizationComponent = exports.RouterComponent = undefined;
 
-    var _component2 = _interopRequireDefault(_component);
+    var _RouterComponent2 = _interopRequireDefault(_RouterComponent);
+
+    var _AuthorizationComponent2 = _interopRequireDefault(_AuthorizationComponent);
 
     var _helper2 = _interopRequireDefault(_helper);
 
@@ -37,7 +39,8 @@
         changeHistoryError: _action.changeHistoryError
     };
 
-    exports.component = _component2.default;
+    exports.RouterComponent = _RouterComponent2.default;
+    exports.AuthorizationComponent = _AuthorizationComponent2.default;
     exports.helper = _helper2.default;
     exports.reducer = _reducer2.default;
     exports.actions = actions;

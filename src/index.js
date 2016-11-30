@@ -1,4 +1,5 @@
-import component from './component.js';
+import RouterComponent from './RouterComponent.js';
+import AuthorizationComponent from './AuthorizationComponent.js';
 import helper from './helper.js';
 import reducer from './reducer.js';
 import { CHANGE_HISTORY, changeHistory, CHANGE_HISTORY_ERROR, changeHistoryError } from './action.js';
@@ -11,7 +12,8 @@ const actions = {
 };
 
 export {
-    component,
+    RouterComponent,
+    AuthorizationComponent,
     helper,
     reducer,
     actions

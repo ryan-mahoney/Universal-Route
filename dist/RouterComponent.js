@@ -8,7 +8,7 @@
             exports: {}
         };
         factory(mod.exports, global.assign, global.keys, global.react, global.redux, global.reactRedux, global.reqwest, global.nprogress, global.guid, global.helper);
-        global.component = mod.exports;
+        global.RouterComponent = mod.exports;
     }
 })(this, function (exports, _assign, _keys, _react, _redux, _reactRedux, _reqwest, _nprogress, _guid, _helper) {
     'use strict';
