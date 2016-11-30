@@ -1,6 +1,6 @@
 import { combineReducers } from 'redux';
 import { CHANGE_HISTORY, CHANGE_HISTORY_ERROR } from './action.js';
-import authorizationReducer from './authorizationReducer.js';
+import authorization from './authorization.js';
 
 const globalReducer = (currentState = initialState, action) => {
     switch (action.type) {
@@ -15,7 +15,7 @@ const globalReducer = (currentState = initialState, action) => {
 
 export default function (reducers) {
 
-    const subReducers = combineReducers(Object.assign({}, reducers, {authorizationReducer}));
+    const subReducers = combineReducers(Object.assign({}, reducers, {authorization}));
 
     return function (currentState = initialState, action) {
         var nextState = globalReducer(currentState, action);

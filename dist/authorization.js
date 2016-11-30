@@ -8,7 +8,7 @@
             exports: {}
         };
         factory(mod.exports);
-        global.authorizationReducer = mod.exports;
+        global.authorization = mod.exports;
     }
 })(this, function (exports) {
     "use strict";
