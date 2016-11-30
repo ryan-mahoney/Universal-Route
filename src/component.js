@@ -25,7 +25,12 @@ export default function (historyObj, Routes, Actions, Unknown) {
 
         handleUnlisten: function () {},
 
-        componentDidMount: function () {
+        componentWillMount: function () {
+            // handle server case
+            if (!historyObj) {
+                return;
+            }
+
             // listen for changes to the current location
             this.handleUnlisten = historyObj.listen(function (location, action) {
 
@@ -53,15 +58,20 @@ export default function (historyObj, Routes, Actions, Unknown) {
                     }
                 }).then(function (response) {
 
+                    // handle authorization based redirection
+                    if (response.authorization) {
+                        nprogress.done();
+                        historyObj.push(response.authorization.redirect);
+                        return;
+                    }
+
                     // update store
                     response.location = location.pathname;
                     this.props.changeHistory(response);
                     nprogress.done();
 
                 }.bind(this), function (err, msg) {
-                    console.log('XHR ERROR');
-                    console.log(err);
-                    this.props.changeHistory({location: location.pathname});
+                    this.props.changeHistoryError({err, msg});
                     nprogress.done();
                 }.bind(this));
 

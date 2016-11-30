@@ -1,12 +1,16 @@
 import component from './component.js';
 import helper from './helper.js';
 import reducer from './reducer.js';
-import { CHANGE_HISTORY, changeHistory } from './action.js';
+import { CHANGE_HISTORY, changeHistory, CHANGE_HISTORY_ERROR, changeHistoryError } from './action.js';
 
 export {
-    component,
-    helper,
-    reducer,
-    CHANGE_HISTORY,
-    changeHistory
+    component: component,
+    helper: helper,
+    reducer: reducer,
+    actions: {
+        CHANGE_HISTORY,
+        changeHistory,
+        CHANGE_HISTORY_ERROR,
+        changeHistoryError
+    },
 };
