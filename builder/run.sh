@@ -15,7 +15,7 @@ docker run \
     --rm \
     -t \
     -i \
-    --name UniversalRoute-NPM \
+    --name universal-route-npm \
     -v "$DIR/..":/app \
     opinephp/npm \
     $CMD
