@@ -23,6 +23,16 @@ export default function (historyObj, Routes, Actions, Unknown) {
 
     return connect(mapStateToProps, mapDispatchToProps)(React.createClass({
 
+        getInitialState: function () {
+
+            // if an init function was specified as a property, call it
+            if ('init' in this.props) {
+                this.props.init();
+            }
+
+            return {};
+        },
+
         handleUnlisten: function () {},
 
         componentWillMount: function () {

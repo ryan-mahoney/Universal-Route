@@ -29,6 +29,16 @@
 
         return (0, _reactRedux.connect)(mapStateToProps, mapDispatchToProps)(_react2.default.createClass({
 
+            getInitialState: function getInitialState() {
+
+                // if an init function was specified as a property, call it
+                if ('init' in this.props) {
+                    this.props.init();
+                }
+
+                return {};
+            },
+
             handleUnlisten: function handleUnlisten() {},
 
             componentWillMount: function componentWillMount() {
