@@ -17,22 +17,6 @@
         value: true
     });
 
-    exports.default = function (reducers) {
-
-        var subReducers = (0, _redux.combineReducers)((0, _assign2.default)({}, reducers, { authorization: _authorization2.default }));
-
-        return function () {
-            var currentState = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : initialState;
-            var action = arguments[1];
-
-            var nextState = globalReducer(currentState, action);
-            if (action.type == _action.CHANGE_HISTORY || action.type == _action.CHANGE_HISTORY_ERROR) {
-                return nextState;
-            }
-            return subReducers(nextState, action);
-        };
-    };
-
     var _assign2 = _interopRequireDefault(_assign);
 
     var _authorization2 = _interopRequireDefault(_authorization);
@@ -57,5 +41,19 @@
         }
     };
 
-    ;
+    exports.default = function (reducers) {
+
+        var subReducers = (0, _redux.combineReducers)((0, _assign2.default)({}, reducers, { authorization: _authorization2.default }));
+
+        return function () {
+            var currentState = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : initialState;
+            var action = arguments[1];
+
+            var nextState = globalReducer(currentState, action);
+            if (action.type == _action.CHANGE_HISTORY || action.type == _action.CHANGE_HISTORY_ERROR) {
+                return nextState;
+            }
+            return subReducers(nextState, action);
+        };
+    };
 });

@@ -64,7 +64,7 @@ export default (historyObj, Routes, Actions, Unknown) => {
                         'Authorization': 'Bearer ' + localStorage.getItem('token')
                     }
                 }).then(
-                    // succes case
+                    // success case
                     (response) => {
 
                         // handle authorization based redirection
@@ -72,6 +72,13 @@ export default (historyObj, Routes, Actions, Unknown) => {
                             nprogress.done();
                             historyObj.push(response.authorization.redirect);
                             return;
+                        }
+
+                        // get the component from the router
+                        const route = helper.match(Routes, location.pathname, Unknown);
+                        if (route.reducerKey && response.payload) {
+                            response[route.reducerKey] = response.payload;
+                            delete response.payload;
                         }
 
                         // update store

@@ -92,7 +92,7 @@
                             'Authorization': 'Bearer ' + localStorage.getItem('token')
                         }
                     }).then(
-                    // succes case
+                    // success case
                     function (response) {
 
                         // handle authorization based redirection
@@ -100,6 +100,13 @@
                             _nprogress2.default.done();
                             historyObj.push(response.authorization.redirect);
                             return;
+                        }
+
+                        // get the component from the router
+                        var route = _helper2.default.match(Routes, location.pathname, Unknown);
+                        if (route.reducerKey && response.payload) {
+                            response[route.reducerKey] = response.payload;
+                            delete response.payload;
                         }
 
                         // update store
