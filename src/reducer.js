@@ -17,7 +17,7 @@ export default function (reducers) {
 
     const subReducers = combineReducers(Object.assign({}, reducers, {authorization}));
 
-    return function (currentState = initialState, action) {
+    return (currentState = initialState, action) => {
         var nextState = globalReducer(currentState, action);
         if (action.type == CHANGE_HISTORY || action.type == CHANGE_HISTORY_ERROR) {
             return nextState;

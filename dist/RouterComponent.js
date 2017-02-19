@@ -17,6 +17,26 @@
         value: true
     });
 
+    var _assign2 = _interopRequireDefault(_assign);
+
+    var _keys2 = _interopRequireDefault(_keys);
+
+    var _react2 = _interopRequireDefault(_react);
+
+    var _reqwest2 = _interopRequireDefault(_reqwest);
+
+    var _nprogress2 = _interopRequireDefault(_nprogress);
+
+    var _guid2 = _interopRequireDefault(_guid);
+
+    var _helper2 = _interopRequireDefault(_helper);
+
+    function _interopRequireDefault(obj) {
+        return obj && obj.__esModule ? obj : {
+            default: obj
+        };
+    }
+
     exports.default = function (historyObj, Routes, Actions, Unknown) {
 
         function mapDispatchToProps(dispatch) {
@@ -29,19 +49,18 @@
 
         return (0, _reactRedux.connect)(mapStateToProps, mapDispatchToProps)(_react2.default.createClass({
 
-            getInitialState: function getInitialState() {
+            handleUnlisten: function handleUnlisten() {},
 
+            componentDidMount: function componentDidMount() {
                 // if an init function was specified as a property, call it
                 if ('init' in this.props) {
                     this.props.init();
                 }
-
-                return {};
             },
 
-            handleUnlisten: function handleUnlisten() {},
-
             componentWillMount: function componentWillMount() {
+                var _this = this;
+
                 // handle server case
                 if (!historyObj) {
                     return;
@@ -51,7 +70,7 @@
                 this.handleUnlisten = historyObj.listen(function (location, action) {
 
                     // decide which path to call
-                    var path;
+                    var path = void 0;
                     var guid = _guid2.default.raw();
                     if (location.pathname.indexOf('?') !== -1) {
                         path = location.pathname + '&guid=' + guid;
@@ -72,7 +91,9 @@
                         headers: {
                             'Authorization': 'Bearer ' + localStorage.getItem('token')
                         }
-                    }).then(function (response) {
+                    }).then(
+                    // succes case
+                    function (response) {
 
                         // handle authorization based redirection
                         if (response.authorization) {
@@ -83,13 +104,16 @@
 
                         // update store
                         response.location = location.pathname;
-                        this.props.changeHistory(response);
+                        _this.props.changeHistory(response);
                         _nprogress2.default.done();
-                    }.bind(this), function (err, msg) {
-                        this.props.changeHistoryError({ err: err, msg: msg });
+                    },
+
+                    // error case
+                    function (err, msg) {
+                        _this.props.changeHistoryError({ err: err, msg: msg });
                         _nprogress2.default.done();
-                    }.bind(this));
-                }.bind(this));
+                    });
+                });
             },
 
             componentWillUnmount: function componentWillUnmount() {
@@ -97,26 +121,33 @@
             },
 
             render: function render() {
+                var _this2 = this;
 
                 // get the component from the router
-                var route = _helper2.default.match(Routes, this.props.location, Unknown);
+                var route = void 0;
+                if (this.props.route) {
+                    route = this.props.route;
+                } else {
+                    route = _helper2.default.match(Routes, this.props.location, Unknown);
+                }
                 var Component = route.component;
 
                 // we may not send all the props, depending if there is a reducerKey
                 var props = {};
                 if (route.reducerKey) {
+
                     // include all the action functions
                     (0, _keys2.default)(this.props).map(function (propKey) {
                         // if it is a function, must be a redux action function
-                        if (Object.prototype.toString.call(this.props[propKey]) === '[object Function]') {
-                            props[propKey] = this.props[propKey];
+                        if (Object.prototype.toString.call(_this2.props[propKey]) === '[object Function]') {
+                            props[propKey] = _this2.props[propKey];
                         }
-                    }.bind(this));
+                    });
 
                     // put the reducerKey properties at the top of the props, ignore other keys
                     (0, _keys2.default)(this.props[route.reducerKey]).map(function (prop) {
-                        props[prop] = this.props[route.reducerKey][prop];
-                    }.bind(this));
+                        props[prop] = _this2.props[route.reducerKey][prop];
+                    });
                 } else {
                     // send all the props
                     props = (0, _assign2.default)(props, this.props, {});
@@ -127,24 +158,4 @@
             }
         }));
     };
-
-    var _assign2 = _interopRequireDefault(_assign);
-
-    var _keys2 = _interopRequireDefault(_keys);
-
-    var _react2 = _interopRequireDefault(_react);
-
-    var _reqwest2 = _interopRequireDefault(_reqwest);
-
-    var _nprogress2 = _interopRequireDefault(_nprogress);
-
-    var _guid2 = _interopRequireDefault(_guid);
-
-    var _helper2 = _interopRequireDefault(_helper);
-
-    function _interopRequireDefault(obj) {
-        return obj && obj.__esModule ? obj : {
-            default: obj
-        };
-    }
 });

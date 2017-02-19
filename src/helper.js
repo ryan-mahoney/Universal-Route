@@ -5,23 +5,23 @@ import React from 'react';
 import pathToRegexp from 'path-to-regexp';
 
 export default {
-    match: function (Routes, location, Unknown) {
+    match: (Routes, location, Unknown) => {
         // loop through all the routes
-        const route = Routes.map(function(route) {
+        const route = Routes.map((route) => {
             // attempt to match
             if (route.re.exec(location)) {
                 return route;
             }
 
         // remove null elements
-        }).filter(function (route) {
+        }).filter((route) => {
             if (route) {
                 return true;
             }
             return false;
 
         // condense array to object
-        }).reduce(function (result, item) {
+        }).reduce((result, item) => {
             return item;
         }, {});
 
@@ -36,10 +36,10 @@ export default {
         return route;
     },
 
-    prepare: function (Routes) {
+    prepare: (Routes) => {
 
         // loop over all routes
-        return Object.keys(Routes).map(function (route) {
+        return Object.keys(Routes).map((route) => {
             var routeKeys = [];
             var re = pathToRegexp(route, routeKeys);
             var component, reducer;

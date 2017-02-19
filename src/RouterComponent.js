@@ -11,7 +11,7 @@ import Guid from 'guid';
 import helper from './helper.js';
 
 // expects all historyObj, Routes, Actions and a 404 React component to be passed in
-export default function (historyObj, Routes, Actions, Unknown) {
+export default (historyObj, Routes, Actions, Unknown) => {
 
     function mapDispatchToProps(dispatch) {
         return bindActionCreators(Actions, dispatch);
@@ -23,17 +23,14 @@ export default function (historyObj, Routes, Actions, Unknown) {
 
     return connect(mapStateToProps, mapDispatchToProps)(React.createClass({
 
-        getInitialState: function () {
+        handleUnlisten: () => {},
 
+        componentDidMount: function () {
             // if an init function was specified as a property, call it
             if ('init' in this.props) {
                 this.props.init();
             }
-
-            return {};
         },
-
-        handleUnlisten: function () {},
 
         componentWillMount: function () {
             // handle server case
@@ -42,10 +39,10 @@ export default function (historyObj, Routes, Actions, Unknown) {
             }
 
             // listen for changes to the current location
-            this.handleUnlisten = historyObj.listen(function (location, action) {
+            this.handleUnlisten = historyObj.listen((location, action) => {
 
                 // decide which path to call
-                var path;
+                let path;
                 const guid = Guid.raw();
                 if (location.pathname.indexOf('?') !== -1) {
                     path = location.pathname + '&guid=' + guid;
@@ -66,26 +63,30 @@ export default function (historyObj, Routes, Actions, Unknown) {
                     headers: {
                         'Authorization': 'Bearer ' + localStorage.getItem('token')
                     }
-                }).then(function (response) {
+                }).then(
+                    // succes case
+                    (response) => {
 
-                    // handle authorization based redirection
-                    if (response.authorization) {
+                        // handle authorization based redirection
+                        if (response.authorization) {
+                            nprogress.done();
+                            historyObj.push(response.authorization.redirect);
+                            return;
+                        }
+
+                        // update store
+                        response.location = location.pathname;
+                        this.props.changeHistory(response);
                         nprogress.done();
-                        historyObj.push(response.authorization.redirect);
-                        return;
+                    },
+
+                    // error case
+                    (err, msg) => {
+                        this.props.changeHistoryError({err, msg});
+                        nprogress.done();
                     }
-
-                    // update store
-                    response.location = location.pathname;
-                    this.props.changeHistory(response);
-                    nprogress.done();
-
-                }.bind(this), function (err, msg) {
-                    this.props.changeHistoryError({err, msg});
-                    nprogress.done();
-                }.bind(this));
-
-            }.bind(this));
+                );
+            });
         },
 
         componentWillUnmount: function () {
@@ -95,24 +96,30 @@ export default function (historyObj, Routes, Actions, Unknown) {
         render: function () {
 
             // get the component from the router
-            var route = helper.match(Routes, this.props.location, Unknown);
-            var Component = route.component;
+            let route;
+            if (this.props.route) {
+                route = this.props.route;
+            } else {
+                route = helper.match(Routes, this.props.location, Unknown);
+            }
+            const Component = route.component;
 
             // we may not send all the props, depending if there is a reducerKey
-            var props = {};
+            let props = {};
             if (route.reducerKey) {
+
                 // include all the action functions
-                Object.keys(this.props).map(function (propKey) {
+                Object.keys(this.props).map((propKey) => {
                     // if it is a function, must be a redux action function
                     if (Object.prototype.toString.call(this.props[propKey]) === '[object Function]') {
                         props[propKey] = this.props[propKey];
                     }
-                }.bind(this));
+                });
 
                 // put the reducerKey properties at the top of the props, ignore other keys
-                Object.keys(this.props[route.reducerKey]).map(function (prop) {
+                Object.keys(this.props[route.reducerKey]).map((prop) => {
                     props[prop] = this.props[route.reducerKey][prop];
-                }.bind(this));
+                });
             } else {
                 // send all the props
                 props = Object.assign(props, this.props, {});
@@ -122,4 +129,4 @@ export default function (historyObj, Routes, Actions, Unknown) {
             return (<Component {...props} />);
         }
     }));
-}
+};
