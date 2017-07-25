@@ -1,12 +1,10 @@
-import { createStore, applyMiddleware } from 'redux';
-import thunkMiddleware from 'redux-thunk';
+import { createStore } from 'redux';
 import { pageReducer } from './../../src/reducer.js';
 
 const configureStore = (preloadedState) => {
   const store = createStore(
     pageReducer,
-    preloadedState,
-    applyMiddleware(thunkMiddleware)
+    preloadedState
   );
 
   return store;

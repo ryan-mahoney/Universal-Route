@@ -19,7 +19,7 @@
         "xprepublish": "babel --plugins 'transform-es2015-modules-umd' src --out-dir ./dist",
         "lint": "eslint ./src",
         "lintfix": "eslint ./src --fix",
-        "test": "mocha --compilers js:babel/register --recursive"
+        "test": "node_modules/mocha/bin/mocha --compilers js:babel-core/register"
     },
     "devDependencies": {
         "babel-cli": "^6.23.0",
@@ -45,6 +45,7 @@
         "history": "^4.5.1",
         "mocha": "^3.4.2",
         "jsdom": "^11.1.0",
+        "jsdom-global": "^3.0.2",
         "assert": "^1.4.1"
     },
     "peerDependencies": {

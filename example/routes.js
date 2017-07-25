@@ -11,7 +11,8 @@ import NotAuthorized from './components/NotAuthorized.js';
 const routes = {
   '/':                    Home,
   '/about':               About,
-  '/notauthorized':       NotAuthorized
+  '/notauthorized':       NotAuthorized,
+  'blank':                Home
 };
 
 // export the routes after prepating them
