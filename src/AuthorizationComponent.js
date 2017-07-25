@@ -1,31 +1,25 @@
 import React from 'react';
+import createReactClass from 'create-react-class';
+import { navigate } from './router.js';
 
-const AuthorizationComponent = React.createClass({
+const AuthorizationComponent = createReactClass({
 
-    componentDidMount: function () {
-        // read token from local storage
-        const token = localStorage.getItem('token');
+  componentDidMount: function () {
+    // read token from local storage
+    const token = localStorage.getItem('token');
 
-        // validate input
-        if (!token) {
-            document.location = this.props.redirect;
-            return;
-        }
-
-        // try with an XHR request
-        window.appHistory.push(this.props.location);
-    },
-
-    render: function () {
-        return (
-            <div className="authorization"></div>
-        );
+    // validate input
+    if (!token) {
+      document.location = this.props.redirect;
+      return;
     }
-});
 
-AuthorizationComponent.propTypes = {
-    location: React.PropTypes.string,
-    redirect: React.PropTypes.string
-};
+    navigate(this.props.redirect);
+  },
+
+  render: function () {
+    return (<div className="authorization"></div>);
+  }
+});
 
 export default AuthorizationComponent;

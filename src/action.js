@@ -1,13 +1,19 @@
 
-export const CHANGE_HISTORY = 'CHANGE_HISTORY';
-export const CHANGE_HISTORY_ERROR = 'CHANGE_HISTORY_ERROR';
+export const CHANGE_PAGE = 'CHANGE_PAGE';
+export const CHANGE_PAGE_ERROR = 'CHANGE_PAGE_ERROR';
+export const CHANGE_PAGE_AUTH = 'CHANGE_PAGE_AUTH';
 
-export const changeHistory = (response) => ({
-    type: CHANGE_HISTORY,
-    payload: response
+export const changePage = (page) => ({
+  type: CHANGE_PAGE,
+  page: page.payload
 });
 
-export const changeHistoryError = (error) => ({
-    type: CHANGE_HISTORY_ERROR,
-    payload: error
+export const changePageError = (error) => ({
+  type: CHANGE_PAGE_ERROR,
+  error: error
+});
+
+export const changePageAuth = (auth) => ({
+  type: CHANGE_PAGE_AUTH,
+  auth: auth
 });

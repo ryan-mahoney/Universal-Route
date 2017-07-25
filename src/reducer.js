@@ -1,27 +1,29 @@
-import { combineReducers } from 'redux';
-import { CHANGE_HISTORY, CHANGE_HISTORY_ERROR } from './action.js';
-import authorization from './authorization.js';
+import { CHANGE_PAGE, CHANGE_PAGE_ERROR, CHANGE_PAGE_AUTH } from './action.js';
 
-const globalReducer = (currentState = initialState, action) => {
-    switch (action.type) {
-    case CHANGE_HISTORY:
-        return Object.assign({}, currentState, action.payload);
-    case CHANGE_HISTORY_ERROR:
-        return Object.assign({}, currentState, {error: action.payload});
+export const pageReducer = (currentState = initialState, action) => {
+  switch (action.type) {
+    case CHANGE_PAGE:
+      return Object.assign({}, currentState, {
+        page: action.page,
+        error: null,
+        auth: null
+      });
+
+    case CHANGE_PAGE_ERROR:
+      return Object.assign({}, currentState, {
+        page: null,
+        error: action.error,
+        auth: null
+      });
+
+    case CHANGE_PAGE_AUTH:
+      return Object.assign({}, currentState, {
+        page: null,
+        error: null,
+        auth: action.auth
+      });
+
     default:
-        return currentState;
-    }
-};
-
-export default (reducers) => {
-
-    const subReducers = combineReducers(Object.assign({}, reducers, {authorization}));
-
-    return (currentState = initialState, action) => {
-        var nextState = globalReducer(currentState, action);
-        if (action.type == CHANGE_HISTORY || action.type == CHANGE_HISTORY_ERROR) {
-            return nextState;
-        }
-        return subReducers(nextState, action);
-    };
+      return currentState;
+  }
 };

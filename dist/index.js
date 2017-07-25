@@ -33,10 +33,10 @@
     }
 
     var actions = {
-        CHANGE_HISTORY: _action.CHANGE_HISTORY,
-        changeHistory: _action.changeHistory,
-        CHANGE_HISTORY_ERROR: _action.CHANGE_HISTORY_ERROR,
-        changeHistoryError: _action.changeHistoryError
+        CHANGE_HISTORY: CHANGE_HISTORY,
+        changeHistory: changeHistory,
+        CHANGE_HISTORY_ERROR: CHANGE_HISTORY_ERROR,
+        changeHistoryError: changeHistoryError
     };
 
     exports.RouterComponent = _RouterComponent2.default;
