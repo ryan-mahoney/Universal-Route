@@ -31,10 +31,27 @@
     var action = arguments[1];
 
     switch (action.type) {
-      case CHANGE_PAGE:
-        return (0, _assign2.default)({}, currentState, { page: action.payload });
-      case CHANGE_PAGE_ERROR:
-        return (0, _assign2.default)({}, currentState, { error: action.error });
+      case _action.CHANGE_PAGE:
+        return (0, _assign2.default)({}, currentState, {
+          page: action.page,
+          error: null,
+          auth: null
+        });
+
+      case _action.CHANGE_PAGE_ERROR:
+        return (0, _assign2.default)({}, currentState, {
+          page: null,
+          error: action.error,
+          auth: null
+        });
+
+      case _action.CHANGE_PAGE_AUTH:
+        return (0, _assign2.default)({}, currentState, {
+          page: null,
+          error: null,
+          auth: action.auth
+        });
+
       default:
         return currentState;
     }

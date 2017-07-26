@@ -2,7 +2,7 @@ import React from 'react';
 import createReactClass from 'create-react-class';
 import { bindActionCreators } from 'redux';
 import { connect } from 'react-redux';
-import reqwest from 'reqwest';
+import axios from 'axios';
 import nprogress from 'nprogress';
 import Guid from 'guid';
 import createHistory from 'history/createBrowserHistory';
@@ -75,44 +75,35 @@ export const createRouter = (routes, actions, UnknownComponent, ErrorComponent) 
         nprogress.start();
 
         // do XHR request
-        reqwest({
-          method: 'get',
-          url: path,
-          type: 'json',
-          contentType: 'application/json',
+        axios.get(path, {
           headers: {
+            'Content-Type': 'application/json',
             'Authorization': 'Bearer ' + localStorage.getItem('token')
           }
-        }).then(
-          // success case
-          (response) => {
+        }).then((response) => {
 
-            // handle authorization based redirection
-            if (response.authorization) {
-              nprogress.done();
-              this.props.changePageAuth(response.authorization);
-              return;
-            }
-
-            // call action
-            let pageData = {
-              location: location.pathname
-            };
-            if (response.payload) {
-              pageData.payload = response.payload;
-            } else {
-              pageData.payload = response;
-            }
+          // handle authorization based redirection
+          if (response.authorization) {
             nprogress.done();
-            this.props.changePage(pageData);
-          },
-
-          // error case
-          (err, msg) => {
-            nprogress.done();
-            this.props.changePageError("Server Error");
+            this.props.changePageAuth(response.authorization);
+            return;
           }
-        );
+
+          // call action
+          let pageData = {
+            location: location.pathname
+          };
+          if (response.payload) {
+            pageData.payload = response.payload;
+          } else {
+            pageData.payload = response;
+          }
+          nprogress.done();
+          this.props.changePage(pageData);
+        }).catch((error) => {
+          nprogress.done();
+          this.props.changePageError("Server Error");
+        });
       });
     },
 

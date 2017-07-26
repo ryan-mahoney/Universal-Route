@@ -1,47 +1,32 @@
 (function (global, factory) {
-    if (typeof define === "function" && define.amd) {
-        define(['exports', './RouterComponent.js', './AuthorizationComponent.js', './helper.js', './reducer.js', './action.js'], factory);
-    } else if (typeof exports !== "undefined") {
-        factory(exports, require('./RouterComponent.js'), require('./AuthorizationComponent.js'), require('./helper.js'), require('./reducer.js'), require('./action.js'));
-    } else {
-        var mod = {
-            exports: {}
-        };
-        factory(mod.exports, global.RouterComponent, global.AuthorizationComponent, global.helper, global.reducer, global.action);
-        global.index = mod.exports;
-    }
-})(this, function (exports, _RouterComponent, _AuthorizationComponent, _helper, _reducer, _action) {
-    'use strict';
-
-    Object.defineProperty(exports, "__esModule", {
-        value: true
-    });
-    exports.actions = exports.reducer = exports.helper = exports.AuthorizationComponent = exports.RouterComponent = undefined;
-
-    var _RouterComponent2 = _interopRequireDefault(_RouterComponent);
-
-    var _AuthorizationComponent2 = _interopRequireDefault(_AuthorizationComponent);
-
-    var _helper2 = _interopRequireDefault(_helper);
-
-    var _reducer2 = _interopRequireDefault(_reducer);
-
-    function _interopRequireDefault(obj) {
-        return obj && obj.__esModule ? obj : {
-            default: obj
-        };
-    }
-
-    var actions = {
-        CHANGE_HISTORY: CHANGE_HISTORY,
-        changeHistory: changeHistory,
-        CHANGE_HISTORY_ERROR: CHANGE_HISTORY_ERROR,
-        changeHistoryError: changeHistoryError
+  if (typeof define === "function" && define.amd) {
+    define(['module', './router.js', './helper.js', './reducer.js', './action.js'], factory);
+  } else if (typeof exports !== "undefined") {
+    factory(module, require('./router.js'), require('./helper.js'), require('./reducer.js'), require('./action.js'));
+  } else {
+    var mod = {
+      exports: {}
     };
+    factory(mod, global.router, global.helper, global.reducer, global.action);
+    global.index = mod.exports;
+  }
+})(this, function (module, _router, _helper, _reducer, _action) {
+  'use strict';
 
-    exports.RouterComponent = _RouterComponent2.default;
-    exports.AuthorizationComponent = _AuthorizationComponent2.default;
-    exports.helper = _helper2.default;
-    exports.reducer = _reducer2.default;
-    exports.actions = actions;
+  var _helper2 = _interopRequireDefault(_helper);
+
+  function _interopRequireDefault(obj) {
+    return obj && obj.__esModule ? obj : {
+      default: obj
+    };
+  }
+
+  module.exports = {
+    Link: _router.Link,
+    navigate: _router.navigate,
+    createRouter: _router.createRouter,
+    helper: _helper2.default,
+    pageReducer: _reducer.pageReducer,
+    actions: { CHANGE_PAGE: _action.CHANGE_PAGE, CHANGE_PAGE_ERROR: _action.CHANGE_PAGE_ERROR, CHANGE_PAGE_AUTH: _action.CHANGE_PAGE_AUTH, changePage: _action.changePage, changePageError: _action.changePageError, changePageAuth: _action.changePageAuth }
+  };
 });

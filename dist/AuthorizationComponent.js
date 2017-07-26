@@ -41,19 +41,13 @@
         return;
       }
 
-      // try with an XHR request
-      (0, _router.navigate)(this.props.location);
+      (0, _router.navigate)(this.props.redirect);
     },
 
     render: function render() {
       return _react2.default.createElement('div', { className: 'authorization' });
     }
   });
-
-  AuthorizationComponent.propTypes = {
-    location: _react2.default.PropTypes.string,
-    redirect: _react2.default.PropTypes.string
-  };
 
   exports.default = AuthorizationComponent;
 });

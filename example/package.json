@@ -30,7 +30,7 @@
         "redux": "^3.6.0",
         "react-redux": "^5.0.2",
         "redux-thunk": "^2.2.0",
-        "reqwest": "2.0.5",
+        "axios": "^0.16.2",
         "xhr2": "^0.1.4",
         "nprogress": "^0.2.0",
         "history": "^4.5.1"
