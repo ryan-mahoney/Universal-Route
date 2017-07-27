@@ -7,7 +7,7 @@ module.exports = {
   Link: Link,
   navigate: navigate,
   createRouter: createRouter,
-  helper: helper,
+  routesHelper: helper,
   pageReducer: pageReducer,
-  actions: { CHANGE_PAGE, CHANGE_PAGE_ERROR, CHANGE_PAGE_AUTH, changePage, changePageError, changePageAuth }
+  routerActions: { CHANGE_PAGE, CHANGE_PAGE_ERROR, CHANGE_PAGE_AUTH, changePage, changePageError, changePageAuth }
 };

@@ -25,8 +25,8 @@
     Link: _router.Link,
     navigate: _router.navigate,
     createRouter: _router.createRouter,
-    helper: _helper2.default,
+    routesHelper: _helper2.default,
     pageReducer: _reducer.pageReducer,
-    actions: { CHANGE_PAGE: _action.CHANGE_PAGE, CHANGE_PAGE_ERROR: _action.CHANGE_PAGE_ERROR, CHANGE_PAGE_AUTH: _action.CHANGE_PAGE_AUTH, changePage: _action.changePage, changePageError: _action.changePageError, changePageAuth: _action.changePageAuth }
+    routerActions: { CHANGE_PAGE: _action.CHANGE_PAGE, CHANGE_PAGE_ERROR: _action.CHANGE_PAGE_ERROR, CHANGE_PAGE_AUTH: _action.CHANGE_PAGE_AUTH, changePage: _action.changePage, changePageError: _action.changePageError, changePageAuth: _action.changePageAuth }
   };
 });
