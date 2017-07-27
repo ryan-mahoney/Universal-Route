@@ -26,10 +26,7 @@
     };
   }
 
-  var pageReducer = exports.pageReducer = function pageReducer() {
-    var currentState = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : initialState;
-    var action = arguments[1];
-
+  var pageReducer = exports.pageReducer = function pageReducer(currentState, action) {
     switch (action.type) {
       case _action.CHANGE_PAGE:
         return (0, _assign2.default)({}, currentState, {

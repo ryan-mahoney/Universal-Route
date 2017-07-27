@@ -1,16 +1,16 @@
 (function (global, factory) {
   if (typeof define === "function" && define.amd) {
-    define(['exports', 'babel-runtime/core-js/object/keys', 'react', 'create-react-class', 'redux', 'react-redux', 'axios', 'nprogress', 'guid', 'history/createBrowserHistory', './AuthorizationComponent.js', './helper.js'], factory);
+    define(['exports', 'babel-runtime/core-js/object/keys', 'react', 'create-react-class', 'redux', 'react-redux', 'axios', 'nprogress', 'uuid/v4', 'history/createBrowserHistory', './AuthorizationComponent.js', './helper.js'], factory);
   } else if (typeof exports !== "undefined") {
-    factory(exports, require('babel-runtime/core-js/object/keys'), require('react'), require('create-react-class'), require('redux'), require('react-redux'), require('axios'), require('nprogress'), require('guid'), require('history/createBrowserHistory'), require('./AuthorizationComponent.js'), require('./helper.js'));
+    factory(exports, require('babel-runtime/core-js/object/keys'), require('react'), require('create-react-class'), require('redux'), require('react-redux'), require('axios'), require('nprogress'), require('uuid/v4'), require('history/createBrowserHistory'), require('./AuthorizationComponent.js'), require('./helper.js'));
   } else {
     var mod = {
       exports: {}
     };
-    factory(mod.exports, global.keys, global.react, global.createReactClass, global.redux, global.reactRedux, global.axios, global.nprogress, global.guid, global.createBrowserHistory, global.AuthorizationComponent, global.helper);
+    factory(mod.exports, global.keys, global.react, global.createReactClass, global.redux, global.reactRedux, global.axios, global.nprogress, global.v4, global.createBrowserHistory, global.AuthorizationComponent, global.helper);
     global.router = mod.exports;
   }
-})(this, function (exports, _keys, _react, _createReactClass, _redux, _reactRedux, _axios, _nprogress, _guid, _createBrowserHistory, _AuthorizationComponent, _helper) {
+})(this, function (exports, _keys, _react, _createReactClass, _redux, _reactRedux, _axios, _nprogress, _v, _createBrowserHistory, _AuthorizationComponent, _helper) {
   'use strict';
 
   Object.defineProperty(exports, "__esModule", {
@@ -28,7 +28,7 @@
 
   var _nprogress2 = _interopRequireDefault(_nprogress);
 
-  var _guid2 = _interopRequireDefault(_guid);
+  var _v2 = _interopRequireDefault(_v);
 
   var _createBrowserHistory2 = _interopRequireDefault(_createBrowserHistory);
 
@@ -103,11 +103,11 @@
 
           // decide which path to call
           var path = void 0;
-          var guid = _guid2.default.raw();
+          var uuid = (0, _v2.default)();
           if (location.pathname.indexOf('?') !== -1) {
-            path = location.pathname + '&guid=' + guid;
+            path = location.pathname + '&uuid=' + uuid;
           } else {
-            path = location.pathname + '?guid=' + guid;
+            path = location.pathname + '?uuid=' + uuid;
           }
 
           // clear and start

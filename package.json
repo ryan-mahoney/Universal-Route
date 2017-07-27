@@ -1,6 +1,6 @@
 {
     "name": "universal-route",
-    "version": "1.0.12",
+    "version": "1.0.13",
     "description": "Routing system for React and Redux",
     "repository": {
         "type": "git",
@@ -59,6 +59,6 @@
     },
     "dependencies": {
         "path-to-regexp": "^1.7.0",
-        "guid": "^0.0.12"
+        "uuid": "^3.1.0"
     }
 }

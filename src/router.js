@@ -4,7 +4,7 @@ import { bindActionCreators } from 'redux';
 import { connect } from 'react-redux';
 import axios from 'axios';
 import nprogress from 'nprogress';
-import Guid from 'guid';
+import uuidv4 from 'uuid/v4';
 import createHistory from 'history/createBrowserHistory';
 import AuthorizationComponent from './AuthorizationComponent.js';
 
@@ -63,11 +63,11 @@ export const createRouter = (routes, actions, UnknownComponent, ErrorComponent) 
 
         // decide which path to call
         let path;
-        const guid = Guid.raw();
+        const uuid = uuidv4();
         if (location.pathname.indexOf('?') !== -1) {
-          path = location.pathname + '&guid=' + guid;
+          path = location.pathname + '&uuid=' + uuid;
         } else {
-          path = location.pathname + '?guid=' + guid;
+          path = location.pathname + '?uuid=' + uuid;
         }
 
         // clear and start

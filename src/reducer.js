@@ -1,6 +1,6 @@
 import { CHANGE_PAGE, CHANGE_PAGE_ERROR, CHANGE_PAGE_AUTH } from './action.js';
 
-export const pageReducer = (currentState = initialState, action) => {
+export const pageReducer = (currentState, action) => {
   switch (action.type) {
     case CHANGE_PAGE:
       return Object.assign({}, currentState, {
