@@ -16,7 +16,7 @@
   Object.defineProperty(exports, "__esModule", {
     value: true
   });
-  exports.pageReducer = undefined;
+  exports.reducer = undefined;
 
   var _assign2 = _interopRequireDefault(_assign);
 
@@ -26,7 +26,10 @@
     };
   }
 
-  var pageReducer = exports.pageReducer = function pageReducer(currentState, action) {
+  var reducer = exports.reducer = function reducer() {
+    var currentState = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+    var action = arguments[1];
+
     switch (action.type) {
       case _action.CHANGE_PAGE:
         return (0, _assign2.default)({}, currentState, {

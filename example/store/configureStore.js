@@ -1,9 +1,9 @@
 import { createStore } from 'redux';
-import { pageReducer } from './../../src/reducer.js';
+import { reducer } from './../../src/reducer.js';
 
 const configureStore = (preloadedState) => {
   const store = createStore(
-    pageReducer,
+    reducer,
     preloadedState
   );
 
