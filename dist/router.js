@@ -133,10 +133,10 @@
             var pageData = {
               location: location.pathname
             };
-            if (response.payload) {
-              pageData.payload = response.payload;
+            if (response.data.payload) {
+              pageData.payload = response.data.payload;
             } else {
-              pageData.payload = response;
+              pageData.payload = response.data;
             }
             _nprogress2.default.done();
             _this.props.changePage(pageData);

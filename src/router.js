@@ -93,10 +93,10 @@ export const createRouter = (routes, actions, UnknownComponent, ErrorComponent) 
           let pageData = {
             location: location.pathname
           };
-          if (response.payload) {
-            pageData.payload = response.payload;
+          if (response.data.payload) {
+            pageData.payload = response.data.payload;
           } else {
-            pageData.payload = response;
+            pageData.payload = response.data;
           }
           nprogress.done();
           this.props.changePage(pageData);
