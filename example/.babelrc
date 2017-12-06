@@ -5,7 +5,7 @@
   "stage-0"
   ],
   "plugins": [
-  "transform-runtime",
-  "transform-object-rest-spread"
+    "transform-runtime",
+    "transform-object-rest-spread"
   ]
 }

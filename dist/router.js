@@ -79,80 +79,76 @@
       return state;
     };
 
-    return (0, _reactRedux.connect)(mapStateToProps, mapDispatchToProps)((0, _createReactClass2.default)({
+    var changePageAuth = function changePageAuth() {};
+    var changePageError = function changePageError() {};
+    var changePage = function changePage() {};
 
-      handleUnlisten: function handleUnlisten() {},
+    var syncToHistory = function syncToHistory() {
+      // handle server case
+      if (!appHistory) {
+        return;
+      }
 
-      componentDidMount: function componentDidMount() {
-        // if an init function was specified as a property, call it
-        if ('init' in this.props) {
-          this.props.init();
+      // listen for changes to the current location
+      appHistory.listen(function (location, action) {
+
+        // decide which path to call
+        var path = void 0;
+        var uuid = (0, _v2.default)();
+        if (location.pathname.indexOf('?') !== -1) {
+          path = location.pathname + '&uuid=' + uuid;
+        } else {
+          path = location.pathname + '?uuid=' + uuid;
         }
-      },
 
-      componentWillMount: function componentWillMount() {
-        var _this = this;
+        // clear and start
+        _nprogress2.default.done();
+        _nprogress2.default.start();
 
-        // handle server case
-        if (!appHistory) {
-          return;
-        }
+        // do XHR request
+        _axios2.default.get(path, {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + localStorage.getItem('token')
+          }
+        }).then(function (response) {
 
-        // listen for changes to the current location
-        this.handleUnlisten = appHistory.listen(function (location, action) {
-
-          // decide which path to call
-          var path = void 0;
-          var uuid = (0, _v2.default)();
-          if (location.pathname.indexOf('?') !== -1) {
-            path = location.pathname + '&uuid=' + uuid;
-          } else {
-            path = location.pathname + '?uuid=' + uuid;
+          // handle authorization based redirection
+          if (response.authorization) {
+            _nprogress2.default.done();
+            changePageAuth(response.authorization);
+            return;
           }
 
-          // clear and start
+          // call action
+          var pageData = {
+            location: location.pathname
+          };
+          if (response.data.payload) {
+            pageData.payload = response.data.payload;
+          } else {
+            pageData.payload = response.data;
+          }
           _nprogress2.default.done();
-          _nprogress2.default.start();
-
-          // do XHR request
-          _axios2.default.get(path, {
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': 'Bearer ' + localStorage.getItem('token')
-            }
-          }).then(function (response) {
-
-            // handle authorization based redirection
-            if (response.authorization) {
-              _nprogress2.default.done();
-              _this.props.changePageAuth(response.authorization);
-              return;
-            }
-
-            // call action
-            var pageData = {
-              location: location.pathname
-            };
-            if (response.data.payload) {
-              pageData.payload = response.data.payload;
-            } else {
-              pageData.payload = response.data;
-            }
-            _nprogress2.default.done();
-            _this.props.changePage(pageData);
-          }).catch(function (error) {
-            _nprogress2.default.done();
-            _this.props.changePageError("Server Error");
-          });
+          changePage(pageData);
+        }).catch(function (error) {
+          _nprogress2.default.done();
+          changePageError("Server Error");
         });
-      },
+      });
+    };
 
-      componentWillUnmount: function componentWillUnmount() {
-        this.handleUnlisten();
+    syncToHistory();
+
+    return (0, _reactRedux.connect)(mapStateToProps, mapDispatchToProps)((0, _createReactClass2.default)({
+      componentDidMount: function componentDidMount() {
+        changePageAuth = this.props.changePageAuth;
+        changePageError = this.props.changePageError;
+        changePage = this.props.changePage;
       },
 
       render: function render() {
-        var _this2 = this;
+        var _this = this;
 
         var path = typeof location !== 'undefined' ? location.pathname : this.props.location;
 
@@ -175,8 +171,8 @@
 
         // include all the action functions
         (0, _keys2.default)(this.props).forEach(function (propKey) {
-          if (Object.prototype.toString.call(_this2.props[propKey]) === '[object Function]') {
-            props[propKey] = _this2.props[propKey];
+          if (Object.prototype.toString.call(_this.props[propKey]) === '[object Function]') {
+            props[propKey] = _this.props[propKey];
           }
         });
 

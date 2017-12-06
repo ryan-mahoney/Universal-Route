@@ -41,74 +41,72 @@ export const createRouter = (routes, actions, UnknownComponent, ErrorComponent) 
     return state;
   };
 
-  return connect(mapStateToProps, mapDispatchToProps)(createReactClass({
+  var changePageAuth = () => {};
+  var changePageError = () => {};
+  var changePage = () => {};
 
-    handleUnlisten: () => {},
-
-    componentDidMount: function () {
-      // if an init function was specified as a property, call it
-      if ('init' in this.props) {
-        this.props.init();
+  const syncToHistory = () => {
+    // handle server case
+    if (!appHistory) {
+      return;
+    }
+  
+    // listen for changes to the current location
+    appHistory.listen((location, action) => {
+  
+      // decide which path to call
+      let path;
+      const uuid = uuidv4();
+      if (location.pathname.indexOf('?') !== -1) {
+        path = location.pathname + '&uuid=' + uuid;
+      } else {
+        path = location.pathname + '?uuid=' + uuid;
       }
-    },
-
-    componentWillMount: function () {
-      // handle server case
-      if (!appHistory) {
-        return;
-      }
-
-      // listen for changes to the current location
-      this.handleUnlisten = appHistory.listen((location, action) => {
-
-        // decide which path to call
-        let path;
-        const uuid = uuidv4();
-        if (location.pathname.indexOf('?') !== -1) {
-          path = location.pathname + '&uuid=' + uuid;
-        } else {
-          path = location.pathname + '?uuid=' + uuid;
+  
+      // clear and start
+      nprogress.done();
+      nprogress.start();
+  
+      // do XHR request
+      axios.get(path, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + localStorage.getItem('token')
         }
-
-        // clear and start
+      }).then((response) => {
+  
+        // handle authorization based redirection
+        if (response.authorization) {
+          nprogress.done();
+          changePageAuth(response.authorization);
+          return;
+        }
+  
+        // call action
+        let pageData = {
+          location: location.pathname
+        };
+        if (response.data.payload) {
+          pageData.payload = response.data.payload;
+        } else {
+          pageData.payload = response.data;
+        }
         nprogress.done();
-        nprogress.start();
-
-        // do XHR request
-        axios.get(path, {
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + localStorage.getItem('token')
-          }
-        }).then((response) => {
-
-          // handle authorization based redirection
-          if (response.authorization) {
-            nprogress.done();
-            this.props.changePageAuth(response.authorization);
-            return;
-          }
-
-          // call action
-          let pageData = {
-            location: location.pathname
-          };
-          if (response.data.payload) {
-            pageData.payload = response.data.payload;
-          } else {
-            pageData.payload = response.data;
-          }
-          nprogress.done();
-          this.props.changePage(pageData);
-        }).catch((error) => {
-          nprogress.done();
-          this.props.changePageError("Server Error");
-        });
+        changePage(pageData);
+      }).catch((error) => {
+        nprogress.done();
+        changePageError("Server Error");
       });
-    },
+    });
+  };
 
-    componentWillUnmount: function () {
-      this.handleUnlisten();
+  syncToHistory();
+
+  return connect(mapStateToProps, mapDispatchToProps)(createReactClass({
+    componentDidMount: function () {
+      changePageAuth = this.props.changePageAuth;
+      changePageError = this.props.changePageError;
+      changePage = this.props.changePage;
     },
 
     render: function () {

@@ -20,7 +20,7 @@ const Router = createRouter(routes, {}, PageNotFound, Error);
 
 function handleRender(req, res) {
 
-  if (req.xhr) {
+  if (req.headers['accept'].includes('application/json')) {
     res.setHeader('Content-Type', 'application/json');
     res.send(JSON.stringify({mode: 'xhr'}));
     return;
