@@ -83,14 +83,14 @@ export const createRouter = (routes, actions, UnknownComponent, ErrorComponent) 
         }
   
         // call action
-        let pageData = {
-          location: location.pathname
-        };
+        let pageData = {payload: {}};
         if (response.data.payload) {
           pageData.payload = response.data.payload;
         } else {
           pageData.payload = response.data;
         }
+        pageData.payload.location = location.pathname;
+        
         nprogress.done();
         changePage(pageData);
       }).catch((error) => {
@@ -102,39 +102,41 @@ export const createRouter = (routes, actions, UnknownComponent, ErrorComponent) 
 
   syncToHistory();
 
-  return connect(mapStateToProps, mapDispatchToProps)(createReactClass({
-    componentDidMount: function () {
-      changePageAuth = this.props.changePageAuth;
-      changePageError = this.props.changePageError;
-      changePage = this.props.changePage;
-    },
+  const Router = (props) => {
+    changePageAuth = props.changePageAuth;
+    changePageError = props.changePageError;
+    changePage = props.changePage;
 
-    render: function () {
-      const path = (typeof location !== 'undefined') ? location.pathname : this.props.location;
-      const { Component } = helper.match(routes, path, UnknownComponent);
-      let props = this.props.page || {};
-      let error = this.props.error || null;
-      let auth = this.props.auth || null;
-
-      // handle error
-      if (error) {
-        return (<ErrorComponent error={error} />);
-      }
-
-      // handle auth
-      if (auth) {
-        return (<AuthorizationComponent {...auth} />);
-      }
-
-      // include all the action functions
-      Object.keys(this.props).forEach((propKey) => {
-        if (Object.prototype.toString.call(this.props[propKey]) === '[object Function]') {
-          props[propKey] = this.props[propKey];
-        }
-      });
-
-      // return the component from the router with the appropriate props
-      return (<Component {...props} />);
+    var path = props.location;
+    if (props.page && props.page.data && props.page.data.location) {
+      path = props.page.data.location;
     }
-  }));
+
+    const { Component } = helper.match(routes, path, UnknownComponent);
+    let propsOut = props.page.data || {};
+    const error = props.page.error || null;
+    const auth = props.page.auth || null;
+
+    // handle error
+    if (error) {
+      return (<ErrorComponent error={error} />);
+    }
+
+    // handle auth
+    if (auth) {
+      return (<AuthorizationComponent {...auth} />);
+    }
+
+    // include all the action functions
+    Object.keys(props).forEach((propKey) => {
+      if (Object.prototype.toString.call(props[propKey]) === '[object Function]') {
+        propsOut[propKey] = props[propKey];
+      }
+    });
+
+    // return the component from the router with the appropriate props
+    return (<Component {...propsOut} />);
+  };
+
+  return connect(mapStateToProps, mapDispatchToProps)(Router);
 };

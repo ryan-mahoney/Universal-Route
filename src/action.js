@@ -3,9 +3,9 @@ export const CHANGE_PAGE = 'CHANGE_PAGE';
 export const CHANGE_PAGE_ERROR = 'CHANGE_PAGE_ERROR';
 export const CHANGE_PAGE_AUTH = 'CHANGE_PAGE_AUTH';
 
-export const changePage = (page) => ({
+export const changePage = (data) => ({
   type: CHANGE_PAGE,
-  page: page.payload
+  data: data.payload
 });
 
 export const changePageError = (error) => ({

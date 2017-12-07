@@ -121,14 +121,14 @@
           }
 
           // call action
-          var pageData = {
-            location: location.pathname
-          };
+          var pageData = { payload: {} };
           if (response.data.payload) {
             pageData.payload = response.data.payload;
           } else {
             pageData.payload = response.data;
           }
+          pageData.payload.location = location.pathname;
+
           _nprogress2.default.done();
           changePage(pageData);
         }).catch(function (error) {
@@ -140,45 +140,44 @@
 
     syncToHistory();
 
-    return (0, _reactRedux.connect)(mapStateToProps, mapDispatchToProps)((0, _createReactClass2.default)({
-      componentDidMount: function componentDidMount() {
-        changePageAuth = this.props.changePageAuth;
-        changePageError = this.props.changePageError;
-        changePage = this.props.changePage;
-      },
+    var Router = function Router(props) {
+      changePageAuth = props.changePageAuth;
+      changePageError = props.changePageError;
+      changePage = props.changePage;
 
-      render: function render() {
-        var _this = this;
-
-        var path = typeof location !== 'undefined' ? location.pathname : this.props.location;
-
-        var _helper$match = _helper2.default.match(routes, path, UnknownComponent),
-            Component = _helper$match.Component;
-
-        var props = this.props.page || {};
-        var error = this.props.error || null;
-        var auth = this.props.auth || null;
-
-        // handle error
-        if (error) {
-          return _react2.default.createElement(ErrorComponent, { error: error });
-        }
-
-        // handle auth
-        if (auth) {
-          return _react2.default.createElement(_AuthorizationComponent2.default, auth);
-        }
-
-        // include all the action functions
-        (0, _keys2.default)(this.props).forEach(function (propKey) {
-          if (Object.prototype.toString.call(_this.props[propKey]) === '[object Function]') {
-            props[propKey] = _this.props[propKey];
-          }
-        });
-
-        // return the component from the router with the appropriate props
-        return _react2.default.createElement(Component, props);
+      var path = props.location;
+      if (props.page && props.page.data && props.page.data.location) {
+        path = props.page.data.location;
       }
-    }));
+
+      var _helper$match = _helper2.default.match(routes, path, UnknownComponent),
+          Component = _helper$match.Component;
+
+      var propsOut = props.page.data || {};
+      var error = props.page.error || null;
+      var auth = props.page.auth || null;
+
+      // handle error
+      if (error) {
+        return _react2.default.createElement(ErrorComponent, { error: error });
+      }
+
+      // handle auth
+      if (auth) {
+        return _react2.default.createElement(_AuthorizationComponent2.default, auth);
+      }
+
+      // include all the action functions
+      (0, _keys2.default)(props).forEach(function (propKey) {
+        if (Object.prototype.toString.call(props[propKey]) === '[object Function]') {
+          propsOut[propKey] = props[propKey];
+        }
+      });
+
+      // return the component from the router with the appropriate props
+      return _react2.default.createElement(Component, propsOut);
+    };
+
+    return (0, _reactRedux.connect)(mapStateToProps, mapDispatchToProps)(Router);
   };
 });

@@ -20,10 +20,10 @@
   var CHANGE_PAGE_ERROR = exports.CHANGE_PAGE_ERROR = 'CHANGE_PAGE_ERROR';
   var CHANGE_PAGE_AUTH = exports.CHANGE_PAGE_AUTH = 'CHANGE_PAGE_AUTH';
 
-  var changePage = exports.changePage = function changePage(page) {
+  var changePage = exports.changePage = function changePage(data) {
     return {
       type: CHANGE_PAGE,
-      page: page.payload
+      data: data.payload
     };
   };
 

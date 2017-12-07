@@ -27,27 +27,31 @@
   }
 
   var reducer = exports.reducer = function reducer() {
-    var currentState = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+    var currentState = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {
+      page: {},
+      error: null,
+      auth: null
+    };
     var action = arguments[1];
 
     switch (action.type) {
       case _action.CHANGE_PAGE:
         return (0, _assign2.default)({}, currentState, {
-          page: action.page,
+          data: action.data,
           error: null,
           auth: null
         });
 
       case _action.CHANGE_PAGE_ERROR:
         return (0, _assign2.default)({}, currentState, {
-          page: null,
+          data: null,
           error: action.error,
           auth: null
         });
 
       case _action.CHANGE_PAGE_AUTH:
         return (0, _assign2.default)({}, currentState, {
-          page: null,
+          data: null,
           error: null,
           auth: action.auth
         });
