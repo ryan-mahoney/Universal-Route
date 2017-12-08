@@ -67,21 +67,18 @@ export const createRouter = (routes, actions, UnknownComponent) => {
           'Authorization': 'Bearer ' + localStorage.getItem('token')
         }
       }).then((response) => {
-        let data = Object.assign(response.data, {location: location.pathname});
+        let data = {page: Object.assign(response.data.page, {location: location.pathname})};
         
         // handle authorization based redirection
         if (response.data.page.authorization) {
-          nprogress.done();
-          data.location = '/no-access';
+          data.page.location = '/no-access';
           if (response.data.page.authorization.location) {
-            data.location = response.data.page.authorization.location;
+            data.page.location = response.data.page.authorization.location;
           }
-          changePage(data);
         } else if (response.data.page.error) {
-          changePage(Object.assign(data, {location: '/error'}));
-        } else {
-          changePage(data);
-        }      
+          data.page.location = '/error';
+        }
+        changePage(data.page);   
         nprogress.done();
       }).catch((error) => {
         nprogress.done();
@@ -94,14 +91,9 @@ export const createRouter = (routes, actions, UnknownComponent) => {
 
   const Router = (props) => {
     changePage = props.changePage;
-
     const path = (props.page && props.page.location) ? props.page.location : props.location;
-
     const { Component } = helper.match(routes, path, UnknownComponent);
-    let propsOut = Object.assign(props, props.page);
-
-    // return the component from the router with the appropriate props
-    return (<Component {...propsOut} />);
+    return (<Component {...props} />);
   };
 
   return connect(mapStateToProps, mapDispatchToProps)(Router);

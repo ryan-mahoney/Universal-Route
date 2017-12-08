@@ -10,7 +10,7 @@ const About = (props) => {
   return (
     <div>
       <h1>About</h1>
-      <div>Render Mode: {props.mode}</div>
+      <div>Render Mode: {props.page.mode}</div>
       <div>
         <a href="#" onClick={handleClick}>Home</a>
       </div>

@@ -13,16 +13,15 @@ import configureStore from './store/configureStore.js';
 import { createRouter } from './../src/router.js';
 import routes from './routes.js';
 import PageNotFound from './components/PageNotFound.js';
-import Error from './components/Error.js';
 
 // initialize the router
-const Router = createRouter(routes, {}, PageNotFound, Error);
+const Router = createRouter(routes, {}, PageNotFound);
 
 function handleRender(req, res) {
 
   if (req.headers['accept'].includes('application/json')) {
     res.setHeader('Content-Type', 'application/json');
-    res.send(JSON.stringify({mode: 'xhr'}));
+    res.send(JSON.stringify({page: {mode: 'xhr'}}));
     return;
   }
 
@@ -51,15 +50,15 @@ app.get('/client-build.js', (req, res) => {
 
 app.get('/bad', (req, res) => {
   res.setHeader('Content-Type', 'application/json');
-  res.status(500).send(JSON.stringify({error: 'Something bad happened.'}));
+  res.status(500).send(JSON.stringify({page: {error: 'Something bad happened.'}}));
 });
 
 app.get('/needauth', (req, res) => {
   res.setHeader('Content-Type', 'application/json');
-  res.send(JSON.stringify({authorization: {
+  res.send(JSON.stringify({page: {authorization: {
     redirect: '/notauthorized',
     location: '/needauth'
-  }}));
+  }}}));
 });
 
 // catch all requests

@@ -1,16 +1,16 @@
 (function (global, factory) {
   if (typeof define === "function" && define.amd) {
-    define(['exports', 'babel-runtime/core-js/object/keys', 'react', 'create-react-class', 'redux', 'react-redux', 'axios', 'nprogress', 'uuid/v4', 'history/createBrowserHistory', './AuthorizationComponent.js', './helper.js'], factory);
+    define(['exports', 'babel-runtime/core-js/object/assign', 'react', 'create-react-class', 'redux', 'react-redux', 'axios', 'nprogress', 'uuid/v4', 'history/createBrowserHistory', './AuthorizationComponent.js', './helper.js'], factory);
   } else if (typeof exports !== "undefined") {
-    factory(exports, require('babel-runtime/core-js/object/keys'), require('react'), require('create-react-class'), require('redux'), require('react-redux'), require('axios'), require('nprogress'), require('uuid/v4'), require('history/createBrowserHistory'), require('./AuthorizationComponent.js'), require('./helper.js'));
+    factory(exports, require('babel-runtime/core-js/object/assign'), require('react'), require('create-react-class'), require('redux'), require('react-redux'), require('axios'), require('nprogress'), require('uuid/v4'), require('history/createBrowserHistory'), require('./AuthorizationComponent.js'), require('./helper.js'));
   } else {
     var mod = {
       exports: {}
     };
-    factory(mod.exports, global.keys, global.react, global.createReactClass, global.redux, global.reactRedux, global.axios, global.nprogress, global.v4, global.createBrowserHistory, global.AuthorizationComponent, global.helper);
+    factory(mod.exports, global.assign, global.react, global.createReactClass, global.redux, global.reactRedux, global.axios, global.nprogress, global.v4, global.createBrowserHistory, global.AuthorizationComponent, global.helper);
     global.router = mod.exports;
   }
-})(this, function (exports, _keys, _react, _createReactClass, _redux, _reactRedux, _axios, _nprogress, _v, _createBrowserHistory, _AuthorizationComponent, _helper) {
+})(this, function (exports, _assign, _react, _createReactClass, _redux, _reactRedux, _axios, _nprogress, _v, _createBrowserHistory, _AuthorizationComponent, _helper) {
   'use strict';
 
   Object.defineProperty(exports, "__esModule", {
@@ -18,7 +18,7 @@
   });
   exports.createRouter = exports.navigate = exports.Link = undefined;
 
-  var _keys2 = _interopRequireDefault(_keys);
+  var _assign2 = _interopRequireDefault(_assign);
 
   var _react2 = _interopRequireDefault(_react);
 
@@ -69,7 +69,7 @@
   };
 
   // expects all routes, actions and a 404 React component to be passed in
-  var createRouter = exports.createRouter = function createRouter(routes, actions, UnknownComponent, ErrorComponent) {
+  var createRouter = exports.createRouter = function createRouter(routes, actions, UnknownComponent) {
 
     var mapDispatchToProps = function mapDispatchToProps(dispatch) {
       return (0, _redux.bindActionCreators)(actions, dispatch);
@@ -79,8 +79,6 @@
       return state;
     };
 
-    var changePageAuth = function changePageAuth() {};
-    var changePageError = function changePageError() {};
     var changePage = function changePage() {};
 
     var syncToHistory = function syncToHistory() {
@@ -92,18 +90,13 @@
       // listen for changes to the current location
       appHistory.listen(function (location, action) {
 
-        // decide which path to call
-        var path = void 0;
-        var uuid = (0, _v2.default)();
-        if (location.pathname.indexOf('?') !== -1) {
-          path = location.pathname + '&uuid=' + uuid;
-        } else {
-          path = location.pathname + '?uuid=' + uuid;
-        }
-
         // clear and start
         _nprogress2.default.done();
         _nprogress2.default.start();
+
+        // decide which path to call
+        var uuid = (0, _v2.default)();
+        var path = location.pathname + (location.pathname.indexOf('?') !== -1 ? '&' : '?') + 'uuid=' + uuid;
 
         // do XHR request
         _axios2.default.get(path, {
@@ -112,28 +105,22 @@
             'Authorization': 'Bearer ' + localStorage.getItem('token')
           }
         }).then(function (response) {
+          var data = { page: (0, _assign2.default)(response.data.page, { location: location.pathname }) };
 
           // handle authorization based redirection
-          if (response.authorization) {
-            _nprogress2.default.done();
-            changePageAuth(response.authorization);
-            return;
+          if (response.data.page.authorization) {
+            data.page.location = '/no-access';
+            if (response.data.page.authorization.location) {
+              data.page.location = response.data.page.authorization.location;
+            }
+          } else if (response.data.page.error) {
+            data.page.location = '/error';
           }
-
-          // call action
-          var pageData = { payload: {} };
-          if (response.data.payload) {
-            pageData.payload = response.data.payload;
-          } else {
-            pageData.payload = response.data;
-          }
-          pageData.payload.location = location.pathname;
-
+          changePage(data.page);
           _nprogress2.default.done();
-          changePage(pageData);
         }).catch(function (error) {
           _nprogress2.default.done();
-          changePageError("Server Error");
+          changePage((0, _assign2.default)(error, { location: '/error' }));
         });
       });
     };
@@ -141,41 +128,13 @@
     syncToHistory();
 
     var Router = function Router(props) {
-      changePageAuth = props.changePageAuth;
-      changePageError = props.changePageError;
       changePage = props.changePage;
-
-      var path = props.location;
-      if (props.page && props.page.data && props.page.data.location) {
-        path = props.page.data.location;
-      }
+      var path = props.page && props.page.location ? props.page.location : props.location;
 
       var _helper$match = _helper2.default.match(routes, path, UnknownComponent),
           Component = _helper$match.Component;
 
-      var propsOut = props.page.data || {};
-      var error = props.page.error || null;
-      var auth = props.page.auth || null;
-
-      // handle error
-      if (error) {
-        return _react2.default.createElement(ErrorComponent, { error: error });
-      }
-
-      // handle auth
-      if (auth) {
-        return _react2.default.createElement(_AuthorizationComponent2.default, auth);
-      }
-
-      // include all the action functions
-      (0, _keys2.default)(props).forEach(function (propKey) {
-        if (Object.prototype.toString.call(props[propKey]) === '[object Function]') {
-          propsOut[propKey] = props[propKey];
-        }
-      });
-
-      // return the component from the router with the appropriate props
-      return _react2.default.createElement(Component, propsOut);
+      return _react2.default.createElement(Component, props);
     };
 
     return (0, _reactRedux.connect)(mapStateToProps, mapDispatchToProps)(Router);

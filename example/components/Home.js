@@ -5,7 +5,7 @@ const Home = (props) => {
   return (
     <div>
       <h1>Home</h1>
-      <div>Render Mode: {props.mode}</div>
+      <div>Render Mode: {props.page.mode}</div>
       <div>
         <Link to="/about">About</Link>
       </div>
