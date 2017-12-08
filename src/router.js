@@ -31,7 +31,7 @@ export const navigate = (to) => {
 };
 
 // expects all routes, actions and a 404 React component to be passed in
-export const createRouter = (routes, actions, UnknownComponent, ErrorComponent) => {
+export const createRouter = (routes, actions, UnknownComponent) => {
 
   const mapDispatchToProps = (dispatch) => {
     return bindActionCreators(actions, dispatch);
@@ -41,8 +41,6 @@ export const createRouter = (routes, actions, UnknownComponent, ErrorComponent) 
     return state;
   };
 
-  var changePageAuth = () => {};
-  var changePageError = () => {};
   var changePage = () => {};
 
   const syncToHistory = () => {
@@ -54,19 +52,14 @@ export const createRouter = (routes, actions, UnknownComponent, ErrorComponent) 
     // listen for changes to the current location
     appHistory.listen((location, action) => {
   
-      // decide which path to call
-      let path;
-      const uuid = uuidv4();
-      if (location.pathname.indexOf('?') !== -1) {
-        path = location.pathname + '&uuid=' + uuid;
-      } else {
-        path = location.pathname + '?uuid=' + uuid;
-      }
-  
       // clear and start
       nprogress.done();
       nprogress.start();
-  
+
+      // decide which path to call
+      const uuid = uuidv4();
+      let path = location.pathname + ((location.pathname.indexOf('?') !== -1) ? '&' : '?') + 'uuid=' + uuid;
+    
       // do XHR request
       axios.get(path, {
         headers: {
@@ -74,28 +67,22 @@ export const createRouter = (routes, actions, UnknownComponent, ErrorComponent) 
           'Authorization': 'Bearer ' + localStorage.getItem('token')
         }
       }).then((response) => {
-  
-        // handle authorization based redirection
-        if (response.authorization) {
-          nprogress.done();
-          changePageAuth(response.authorization);
-          return;
-        }
-  
-        // call action
-        let pageData = {payload: {}};
-        if (response.data.payload) {
-          pageData.payload = response.data.payload;
-        } else {
-          pageData.payload = response.data;
-        }
-        pageData.payload.location = location.pathname;
+        let data = {page: Object.assign(response.data.page, {location: location.pathname})};
         
+        // handle authorization based redirection
+        if (response.data.page.authorization) {
+          data.page.location = '/no-access';
+          if (response.data.page.authorization.location) {
+            data.page.location = response.data.page.authorization.location;
+          }
+        } else if (response.data.page.error) {
+          data.page.location = '/error';
+        }
+        changePage(data.page);   
         nprogress.done();
-        changePage(pageData);
       }).catch((error) => {
         nprogress.done();
-        changePageError("Server Error");
+        changePage(Object.assign(error, {location: '/error'}));
       });
     });
   };
@@ -103,39 +90,10 @@ export const createRouter = (routes, actions, UnknownComponent, ErrorComponent) 
   syncToHistory();
 
   const Router = (props) => {
-    changePageAuth = props.changePageAuth;
-    changePageError = props.changePageError;
     changePage = props.changePage;
-
-    var path = props.location;
-    if (props.page && props.page.data && props.page.data.location) {
-      path = props.page.data.location;
-    }
-
+    const path = (props.page && props.page.location) ? props.page.location : props.location;
     const { Component } = helper.match(routes, path, UnknownComponent);
-    let propsOut = props.page.data || {};
-    const error = props.page.error || null;
-    const auth = props.page.auth || null;
-
-    // handle error
-    if (error) {
-      return (<ErrorComponent error={error} />);
-    }
-
-    // handle auth
-    if (auth) {
-      return (<AuthorizationComponent {...auth} />);
-    }
-
-    // include all the action functions
-    Object.keys(props).forEach((propKey) => {
-      if (Object.prototype.toString.call(props[propKey]) === '[object Function]') {
-        propsOut[propKey] = props[propKey];
-      }
-    });
-
-    // return the component from the router with the appropriate props
-    return (<Component {...propsOut} />);
+    return (<Component {...props} />);
   };
 
   return connect(mapStateToProps, mapDispatchToProps)(Router);

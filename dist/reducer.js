@@ -1,8 +1,8 @@
 (function (global, factory) {
   if (typeof define === "function" && define.amd) {
-    define(['exports', 'babel-runtime/core-js/object/assign', './action.js'], factory);
+    define(["exports", "babel-runtime/core-js/object/assign", "./action.js"], factory);
   } else if (typeof exports !== "undefined") {
-    factory(exports, require('babel-runtime/core-js/object/assign'), require('./action.js'));
+    factory(exports, require("babel-runtime/core-js/object/assign"), require("./action.js"));
   } else {
     var mod = {
       exports: {}
@@ -11,7 +11,7 @@
     global.reducer = mod.exports;
   }
 })(this, function (exports, _assign, _action) {
-  'use strict';
+  "use strict";
 
   Object.defineProperty(exports, "__esModule", {
     value: true
@@ -27,34 +27,12 @@
   }
 
   var reducer = exports.reducer = function reducer() {
-    var currentState = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {
-      page: {},
-      error: null,
-      auth: null
-    };
+    var currentState = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : { location: "/", error: null };
     var action = arguments[1];
 
     switch (action.type) {
       case _action.CHANGE_PAGE:
-        return (0, _assign2.default)({}, currentState, {
-          data: action.data,
-          error: null,
-          auth: null
-        });
-
-      case _action.CHANGE_PAGE_ERROR:
-        return (0, _assign2.default)({}, currentState, {
-          data: null,
-          error: action.error,
-          auth: null
-        });
-
-      case _action.CHANGE_PAGE_AUTH:
-        return (0, _assign2.default)({}, currentState, {
-          data: null,
-          error: null,
-          auth: action.auth
-        });
+        return (0, _assign2.default)({}, currentState, action.data);
 
       default:
         return currentState;

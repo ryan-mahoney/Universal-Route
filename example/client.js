@@ -10,10 +10,9 @@ import routes from './routes.js';
 
 // load up a react 404 component
 import PageNotFound from './components/PageNotFound.js';
-import Error from './components/Error.js';
 
 // initialize the router
-const Router = createRouter(routes, actions, PageNotFound, Error);
+const Router = createRouter(routes, actions, PageNotFound);
 
 // preload the store
 const preloadedState = window.__PRELOADED_STATE__ || {};
