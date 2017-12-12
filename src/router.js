@@ -48,10 +48,10 @@ export const createRouter = (routes, actions, UnknownComponent) => {
     if (!appHistory) {
       return;
     }
-  
+
     // listen for changes to the current location
     appHistory.listen((location, action) => {
-  
+
       // clear and start
       nprogress.done();
       nprogress.start();
@@ -59,7 +59,7 @@ export const createRouter = (routes, actions, UnknownComponent) => {
       // decide which path to call
       const uuid = uuidv4();
       let path = location.pathname + ((location.pathname.indexOf('?') !== -1) ? '&' : '?') + 'uuid=' + uuid;
-    
+
       // do XHR request
       axios.get(path, {
         headers: {
@@ -68,7 +68,7 @@ export const createRouter = (routes, actions, UnknownComponent) => {
         }
       }).then((response) => {
         let data = {page: Object.assign(response.data.page, {location: location.pathname})};
-        
+
         // handle authorization based redirection
         if (response.data.page.authorization) {
           data.page.location = '/no-access';
@@ -78,7 +78,7 @@ export const createRouter = (routes, actions, UnknownComponent) => {
         } else if (response.data.page.error) {
           data.page.location = '/error';
         }
-        changePage(data.page);   
+        changePage(data.page);
         nprogress.done();
       }).catch((error) => {
         nprogress.done();
@@ -91,8 +91,7 @@ export const createRouter = (routes, actions, UnknownComponent) => {
 
   const Router = (props) => {
     changePage = props.changePage;
-    const path = (props.page && props.page.location) ? props.page.location : props.location;
-    const { Component } = helper.match(routes, path, UnknownComponent);
+    const { Component } = helper.match(routes, props.page.location, UnknownComponent);
     return (<Component {...props} />);
   };
 

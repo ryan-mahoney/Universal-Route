@@ -129,9 +129,8 @@
 
     var Router = function Router(props) {
       changePage = props.changePage;
-      var path = props.page && props.page.location ? props.page.location : props.location;
 
-      var _helper$match = _helper2.default.match(routes, path, UnknownComponent),
+      var _helper$match = _helper2.default.match(routes, props.page.location, UnknownComponent),
           Component = _helper$match.Component;
 
       return _react2.default.createElement(Component, props);
