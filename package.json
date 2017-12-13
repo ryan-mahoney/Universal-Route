@@ -1,6 +1,6 @@
 {
     "name": "universal-route",
-    "version": "1.0.20",
+    "version": "1.0.21",
     "description": "Routing system for React and Redux",
     "repository": {
         "type": "git",
@@ -38,11 +38,11 @@
         "eslint-plugin-react": "^6.10.0",
         "react": "^16.2.0",
         "react-dom": "^16.2.0",
-        "redux": "^3.6.0",
-        "react-redux": "^5.0.2",
+        "redux": "^3.7.2",
+        "react-redux": "^5.0.6",
         "axios": "^0.16.2",
         "nprogress": "^0.2.0",
-        "history": "^4.5.1",
+        "history": "^4.7.2",
         "mocha": "^3.4.2",
         "jsdom": "^11.1.0",
         "jsdom-global": "^3.0.2",
@@ -51,11 +51,11 @@
     "peerDependencies": {
         "react": "^16.2.0",
         "react-dom": "^16.2.0",
-        "redux": "^3.6.0",
-        "react-redux": "^5.0.2",
-        "axios": "^0.16.2",
+        "redux": "^3.7.2",
+        "react-redux": "^5.0.6",
+        "axios": "^0.17.1",
         "nprogress": "^0.2.0",
-        "history": "^4.5.1"
+        "history": "^4.7.2"
     },
     "dependencies": {
         "path-to-regexp": "^1.7.0",
