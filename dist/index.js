@@ -1,8 +1,8 @@
 (function (global, factory) {
   if (typeof define === "function" && define.amd) {
-    define(['module', './router.js', './helper.js', './reducer.js', './action.js'], factory);
+    define(["module", "./router.js", "./helper.js", "./reducer.js", "./action.js"], factory);
   } else if (typeof exports !== "undefined") {
-    factory(module, require('./router.js'), require('./helper.js'), require('./reducer.js'), require('./action.js'));
+    factory(module, require("./router.js"), require("./helper.js"), require("./reducer.js"), require("./action.js"));
   } else {
     var mod = {
       exports: {}
@@ -11,7 +11,7 @@
     global.index = mod.exports;
   }
 })(this, function (module, _router, _helper, _reducer, _action) {
-  'use strict';
+  "use strict";
 
   var _helper2 = _interopRequireDefault(_helper);
 

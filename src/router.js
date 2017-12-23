@@ -1,18 +1,15 @@
-import React from 'react';
-import createReactClass from 'create-react-class';
-import { bindActionCreators } from 'redux';
-import { connect } from 'react-redux';
-import axios from 'axios';
-import nprogress from 'nprogress';
-import uuidv4 from 'uuid/v4';
-import createHistory from 'history/createBrowserHistory';
-import AuthorizationComponent from './AuthorizationComponent.js';
-
-// local dependencies
-import helper from './helper.js';
+import React from "react";
+import {bindActionCreators} from "redux";
+import {connect} from "react-redux";
+import axios from "axios";
+import nprogress from "nprogress";
+import uuidv4 from "uuid/v4";
+import createHistory from "history/createBrowserHistory";
+import AuthorizationComponent from "./AuthorizationComponent.js";
+import helper from "./helper.js";
 
 var appHistory = false;
-if (typeof window !== 'undefined' && window.document && window.document.createElement) {
+if (typeof window !== "undefined" && window.document && window.document.createElement) {
   appHistory = createHistory();
 }
 
@@ -22,7 +19,7 @@ export const Link = (props) => {
     appHistory.push(props.to);
   };
 
-  const className = (props.className) ? props.className : '';
+  const className = (props.className) ? props.className : "";
   return (<a href={props.to} className={className} onClick={handleClick}>{props.children}</a>);
 };
 
@@ -58,31 +55,31 @@ export const createRouter = (routes, actions, UnknownComponent) => {
 
       // decide which path to call
       const uuid = uuidv4();
-      let path = location.pathname + ((location.pathname.indexOf('?') !== -1) ? '&' : '?') + 'uuid=' + uuid;
+      let path = `${location.pathname}${((location.pathname.indexOf("?") !== -1) ? "&" : "?")}uuid=${uuid}`;
 
       // do XHR request
       axios.get(path, {
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer ' + localStorage.getItem('token')
+          "Content-Type": "application/json",
+          "Authorization": "Bearer " + localStorage.getItem("token")
         }
       }).then((response) => {
         let data = {page: Object.assign(response.data.page, {location: location.pathname})};
 
         // handle authorization based redirection
         if (response.data.page.authorization) {
-          data.page.location = '/no-access';
+          data.page.location = "/no-access";
           if (response.data.page.authorization.location) {
             data.page.location = response.data.page.authorization.location;
           }
         } else if (response.data.page.error) {
-          data.page.location = '/error';
+          data.page.location = "/error";
         }
         changePage(data.page);
         nprogress.done();
       }).catch((error) => {
         nprogress.done();
-        changePage(Object.assign(error, {location: '/error'}));
+        changePage(Object.assign(error, {location: "/error"}));
       });
     });
   };
@@ -91,7 +88,7 @@ export const createRouter = (routes, actions, UnknownComponent) => {
 
   const Router = (props) => {
     changePage = props.changePage;
-    const { Component } = helper.match(routes, props.page.location, UnknownComponent);
+    const {Component} = helper.match(routes, props.page.location, UnknownComponent);
     return (<Component {...props} />);
   };
 

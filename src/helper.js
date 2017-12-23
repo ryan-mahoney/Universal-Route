@@ -1,5 +1,5 @@
-import React from 'react';
-import pathToRegexp from 'path-to-regexp';
+import React from "react";
+import pathToRegexp from "path-to-regexp";
 
 export default {
   match: (routes, location, UnknownComponent) => {

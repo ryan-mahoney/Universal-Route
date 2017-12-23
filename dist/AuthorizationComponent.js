@@ -1,25 +1,33 @@
 (function (global, factory) {
   if (typeof define === "function" && define.amd) {
-    define(['exports', 'react', 'create-react-class', './router.js'], factory);
+    define(["exports", "babel-runtime/core-js/object/get-prototype-of", "babel-runtime/helpers/classCallCheck", "babel-runtime/helpers/createClass", "babel-runtime/helpers/possibleConstructorReturn", "babel-runtime/helpers/inherits", "react", "./router.js"], factory);
   } else if (typeof exports !== "undefined") {
-    factory(exports, require('react'), require('create-react-class'), require('./router.js'));
+    factory(exports, require("babel-runtime/core-js/object/get-prototype-of"), require("babel-runtime/helpers/classCallCheck"), require("babel-runtime/helpers/createClass"), require("babel-runtime/helpers/possibleConstructorReturn"), require("babel-runtime/helpers/inherits"), require("react"), require("./router.js"));
   } else {
     var mod = {
       exports: {}
     };
-    factory(mod.exports, global.react, global.createReactClass, global.router);
+    factory(mod.exports, global.getPrototypeOf, global.classCallCheck, global.createClass, global.possibleConstructorReturn, global.inherits, global.react, global.router);
     global.AuthorizationComponent = mod.exports;
   }
-})(this, function (exports, _react, _createReactClass, _router) {
-  'use strict';
+})(this, function (exports, _getPrototypeOf, _classCallCheck2, _createClass2, _possibleConstructorReturn2, _inherits2, _react, _router) {
+  "use strict";
 
   Object.defineProperty(exports, "__esModule", {
     value: true
   });
 
-  var _react2 = _interopRequireDefault(_react);
+  var _getPrototypeOf2 = _interopRequireDefault(_getPrototypeOf);
 
-  var _createReactClass2 = _interopRequireDefault(_createReactClass);
+  var _classCallCheck3 = _interopRequireDefault(_classCallCheck2);
+
+  var _createClass3 = _interopRequireDefault(_createClass2);
+
+  var _possibleConstructorReturn3 = _interopRequireDefault(_possibleConstructorReturn2);
+
+  var _inherits3 = _interopRequireDefault(_inherits2);
+
+  var _react2 = _interopRequireDefault(_react);
 
   function _interopRequireDefault(obj) {
     return obj && obj.__esModule ? obj : {
@@ -27,27 +35,36 @@
     };
   }
 
-  var AuthorizationComponent = (0, _createReactClass2.default)({
-    displayName: 'AuthorizationComponent',
+  var AuthorizationComponent = function (_React$Component) {
+    (0, _inherits3.default)(AuthorizationComponent, _React$Component);
 
-
-    componentDidMount: function componentDidMount() {
-      // read token from local storage
-      var token = localStorage.getItem('token');
-
-      // validate input
-      if (!token) {
-        document.location = this.props.redirect;
-        return;
-      }
-
-      (0, _router.navigate)(this.props.redirect);
-    },
-
-    render: function render() {
-      return _react2.default.createElement('div', { className: 'authorization' });
+    function AuthorizationComponent() {
+      (0, _classCallCheck3.default)(this, AuthorizationComponent);
+      return (0, _possibleConstructorReturn3.default)(this, (AuthorizationComponent.__proto__ || (0, _getPrototypeOf2.default)(AuthorizationComponent)).apply(this, arguments));
     }
-  });
+
+    (0, _createClass3.default)(AuthorizationComponent, [{
+      key: "componentDidMount",
+      value: function componentDidMount() {
+        // read token from local storage
+        var token = localStorage.getItem("token");
+
+        // validate input
+        if (!token) {
+          document.location = this.props.redirect;
+          return;
+        }
+
+        (0, _router.navigate)(this.props.redirect);
+      }
+    }, {
+      key: "render",
+      value: function render() {
+        return _react2.default.createElement("div", { className: "authorization" });
+      }
+    }]);
+    return AuthorizationComponent;
+  }(_react2.default.Component);
 
   exports.default = AuthorizationComponent;
 });

@@ -1,12 +1,10 @@
-import React from 'react';
-import createReactClass from 'create-react-class';
-import { navigate } from './router.js';
+import React from "react";
+import {navigate} from "./router.js";
 
-const AuthorizationComponent = createReactClass({
-
-  componentDidMount: function () {
+class AuthorizationComponent extends React.Component {
+  componentDidMount() {
     // read token from local storage
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem("token");
 
     // validate input
     if (!token) {
@@ -15,11 +13,11 @@ const AuthorizationComponent = createReactClass({
     }
 
     navigate(this.props.redirect);
-  },
+  }
 
-  render: function () {
+  render () {
     return (<div className="authorization"></div>);
   }
-});
+}
 
 export default AuthorizationComponent;

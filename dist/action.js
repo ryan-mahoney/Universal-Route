@@ -1,6 +1,6 @@
 (function (global, factory) {
   if (typeof define === "function" && define.amd) {
-    define(['exports'], factory);
+    define(["exports"], factory);
   } else if (typeof exports !== "undefined") {
     factory(exports);
   } else {
@@ -11,12 +11,12 @@
     global.action = mod.exports;
   }
 })(this, function (exports) {
-  'use strict';
+  "use strict";
 
   Object.defineProperty(exports, "__esModule", {
     value: true
   });
-  var CHANGE_PAGE = exports.CHANGE_PAGE = 'CHANGE_PAGE';
+  var CHANGE_PAGE = exports.CHANGE_PAGE = "CHANGE_PAGE";
 
   var changePage = exports.changePage = function changePage(data) {
     return {

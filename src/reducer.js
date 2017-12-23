@@ -1,4 +1,4 @@
-import { CHANGE_PAGE } from './action.js';
+import {CHANGE_PAGE} from "./action.js";
 
 export const reducer = (currentState = {location: "/", error: null}, action) => {
   switch (action.type) {

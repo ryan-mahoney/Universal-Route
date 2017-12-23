@@ -1,8 +1,8 @@
 (function (global, factory) {
   if (typeof define === "function" && define.amd) {
-    define(['exports', 'babel-runtime/core-js/object/keys', 'react', 'path-to-regexp'], factory);
+    define(["exports", "babel-runtime/core-js/object/keys", "react", "path-to-regexp"], factory);
   } else if (typeof exports !== "undefined") {
-    factory(exports, require('babel-runtime/core-js/object/keys'), require('react'), require('path-to-regexp'));
+    factory(exports, require("babel-runtime/core-js/object/keys"), require("react"), require("path-to-regexp"));
   } else {
     var mod = {
       exports: {}
@@ -11,7 +11,7 @@
     global.helper = mod.exports;
   }
 })(this, function (exports, _keys, _react, _pathToRegexp) {
-  'use strict';
+  "use strict";
 
   Object.defineProperty(exports, "__esModule", {
     value: true
