@@ -9,21 +9,50 @@ import AuthorizationComponent from "./AuthorizationComponent.js";
 import helper from "./helper.js";
 
 var appHistory = false;
+var getScrollPosition = () => {};
+var getScrollFromSessionStorage = () => {};
+var setScrollToSessionStorage = () => {};
 if (typeof window !== "undefined" && window.document && window.document.createElement) {
   appHistory = createHistory();
+  
+  getScrollPosition = () => {
+    return {
+      y: window.pageYOffset || document.documentElement.scrollTop,
+      x: window.pageXOffset || document.documentElement.scrollLeft 
+    };
+  };
+
+  setScrollToSessionStorage = () => {
+    const path = window.location.pathname;
+    const data = JSON.stringify(Object.assign({}, getScrollFromSessionStorage("*") || {}, {path: getScrollPosition()}));
+    sessionStorage.setItem("scroll", data);
+  };
+
+  getScrollFromSessionStorage = (url) => {
+    const blob = sessionStorage.getItem("scroll");
+    if (!blob) {
+      return null;
+    }
+    const data = JSON.parse(blob);
+    if (url == "*") {
+      return data;
+    }
+    return data[url] || null;
+  };
 }
 
 export const Link = (props) => {
   const handleClick = (e) => {
     e.preventDefault();
+    setScrollToSessionStorage();
     appHistory.push(props.to);
   };
 
-  const className = (props.className) ? props.className : "";
-  return (<a href={props.to} className={className} onClick={handleClick}>{props.children}</a>);
+  return (<a href={props.to} className={props.className} onClick={handleClick}>{props.children}</a>);
 };
 
 export const navigate = (to) => {
+  setScrollToSessionStorage();
   appHistory.push(to);
 };
 
@@ -77,6 +106,17 @@ export const createRouter = (routes, actions, UnknownComponent) => {
         }
         changePage(data.page);
         nprogress.done();
+
+        if (action == "PUSH") {
+          window.scrollTo(0, 0);
+        } else {
+          const previousScroll = getScrollFromSessionStorage(window.location.pathname);
+          if (previousScroll) {
+            setTimeout(() => {
+              window.scrollTo(previousScroll.x, previousScroll.y);
+            }, 250);
+          }
+        }
       }).catch((error) => {
         nprogress.done();
         changePage(Object.assign(error, {location: "/error"}));
