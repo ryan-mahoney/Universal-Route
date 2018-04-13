@@ -131,7 +131,7 @@
             "Authorization": "Bearer " + localStorage.getItem("token")
           }
         }).then(function (response) {
-          var data = { page: (0, _assign2.default)(response.data.page, { location: location.pathname }) };
+          var data = { page: (0, _assign2.default)({}, response.data.page, { location: location.pathname }) };
 
           // handle authorization based redirection
           if (response.data.page.authorization) {
@@ -157,7 +157,7 @@
           }
         }).catch(function (error) {
           _nprogress2.default.done();
-          changePage((0, _assign2.default)(error, { location: "/error" }));
+          changePage((0, _assign2.default)({}, error, { location: "/error" }));
         });
       });
     };
@@ -167,7 +167,7 @@
     var Router = function Router(props) {
       changePage = props.changePage;
 
-      var _helper$match = _helper2.default.match(routes, props.page.location, UnknownComponent),
+      var _helper$match = _helper2.default.match(routes, props.page.location.split("?", 1)[0], UnknownComponent),
           Component = _helper$match.Component;
 
       return _react2.default.createElement(Component, props);

@@ -93,7 +93,7 @@ export const createRouter = (routes, actions, UnknownComponent) => {
           "Authorization": "Bearer " + localStorage.getItem("token")
         }
       }).then((response) => {
-        let data = {page: Object.assign(response.data.page, {location: location.pathname})};
+        let data = {page: Object.assign({}, response.data.page, {location: location.pathname})};
 
         // handle authorization based redirection
         if (response.data.page.authorization) {
@@ -119,7 +119,7 @@ export const createRouter = (routes, actions, UnknownComponent) => {
         }
       }).catch((error) => {
         nprogress.done();
-        changePage(Object.assign(error, {location: "/error"}));
+        changePage(Object.assign({}, error, {location: "/error"}));
       });
     });
   };
@@ -128,7 +128,7 @@ export const createRouter = (routes, actions, UnknownComponent) => {
 
   const Router = (props) => {
     changePage = props.changePage;
-    const {Component} = helper.match(routes, props.page.location, UnknownComponent);
+    const {Component} = helper.match(routes, props.page.location.split("?", 1)[0], UnknownComponent);
     return (<Component {...props} />);
   };
 
