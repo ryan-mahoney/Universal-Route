@@ -16,7 +16,7 @@
     ],
     "main": "dist/index.js",
     "scripts": {
-        "prepublish": "babel --plugins 'transform-es2015-modules-umd' src --out-dir ./dist",
+        "build": "node_modules/babel-cli/bin/babel.js --plugins 'transform-es2015-modules-umd' src --out-dir ./dist",
         "lint": "eslint ./src",
         "lintfix": "eslint ./src --fix",
         "test": "node_modules/mocha/bin/mocha --compilers js:babel-core/register"
@@ -53,7 +53,7 @@
         "react-dom": "^16.2.0",
         "redux": "^3.7.2",
         "react-redux": "^5.0.6",
-        "axios": "^0.17.1",
+        "axios": "^0.18.0",
         "nprogress": "^0.2.0",
         "history": "^4.7.2"
     },

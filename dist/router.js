@@ -1,8 +1,8 @@
 (function (global, factory) {
   if (typeof define === "function" && define.amd) {
-    define(["exports", "babel-runtime/core-js/object/assign", "babel-runtime/core-js/json/stringify", "react", "redux", "react-redux", "axios", "nprogress", "uuid/v4", "history/createBrowserHistory", "./AuthorizationComponent.js", "./helper.js"], factory);
+    define(["exports", "babel-runtime/core-js/object/assign", "babel-runtime/core-js/json/stringify", "react", "redux", "react-redux", "axios", "nprogress", "uuid/v4", "history/createBrowserHistory", "./AuthorizationComponent.js", "./helper"], factory);
   } else if (typeof exports !== "undefined") {
-    factory(exports, require("babel-runtime/core-js/object/assign"), require("babel-runtime/core-js/json/stringify"), require("react"), require("redux"), require("react-redux"), require("axios"), require("nprogress"), require("uuid/v4"), require("history/createBrowserHistory"), require("./AuthorizationComponent.js"), require("./helper.js"));
+    factory(exports, require("babel-runtime/core-js/object/assign"), require("babel-runtime/core-js/json/stringify"), require("react"), require("redux"), require("react-redux"), require("axios"), require("nprogress"), require("uuid/v4"), require("history/createBrowserHistory"), require("./AuthorizationComponent.js"), require("./helper"));
   } else {
     var mod = {
       exports: {}
@@ -58,7 +58,9 @@
 
     setScrollToSessionStorage = function setScrollToSessionStorage() {
       var path = window.location.pathname;
-      var data = (0, _stringify2.default)((0, _assign2.default)({}, getScrollFromSessionStorage("*") || {}, { path: getScrollPosition() }));
+      var data = (0, _stringify2.default)((0, _assign2.default)({}, getScrollFromSessionStorage("*") || {}, {
+        path: getScrollPosition()
+      }));
       sessionStorage.setItem("scroll", data);
     };
 
@@ -96,7 +98,6 @@
 
   // expects all routes, actions and a 404 React component to be passed in
   var createRouter = exports.createRouter = function createRouter(routes, actions, UnknownComponent) {
-
     var mapDispatchToProps = function mapDispatchToProps(dispatch) {
       return (0, _redux.bindActionCreators)(actions, dispatch);
     };
@@ -115,7 +116,6 @@
 
       // listen for changes to the current location
       appHistory.listen(function (location, action) {
-
         // clear and start
         _nprogress2.default.done();
         _nprogress2.default.start();
@@ -128,10 +128,14 @@
         _axios2.default.get(path, {
           headers: {
             "Content-Type": "application/json",
-            "Authorization": "Bearer " + localStorage.getItem("token")
+            Authorization: "Bearer " + localStorage.getItem("token")
           }
         }).then(function (response) {
-          var data = { page: (0, _assign2.default)({}, response.data.page, { location: location.pathname }) };
+          var data = {
+            page: (0, _assign2.default)({}, response.data.page, {
+              location: location.pathname
+            })
+          };
 
           // handle authorization based redirection
           if (response.data.page.authorization) {
