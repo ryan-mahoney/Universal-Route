@@ -122,7 +122,7 @@
 
         // decide which path to call
         var uuid = (0, _v2.default)();
-        var path = "" + location.pathname + (location.pathname.indexOf("?") !== -1 ? "&" : "?") + "uuid=" + uuid;
+        var path = "" + location.pathname + location.search + (location.search.indexOf("?") !== -1 ? "&" : "?") + "uuid=" + uuid;
 
         // do XHR request
         _axios2.default.get(path, {

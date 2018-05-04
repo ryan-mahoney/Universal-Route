@@ -92,8 +92,8 @@ export const createRouter = (routes, actions, UnknownComponent) => {
 
       // decide which path to call
       const uuid = uuidv4();
-      let path = `${location.pathname}${
-        location.pathname.indexOf("?") !== -1 ? "&" : "?"
+      let path = `${location.pathname}${location.search}${
+        location.search.indexOf("?") !== -1 ? "&" : "?"
       }uuid=${uuid}`;
 
       // do XHR request
