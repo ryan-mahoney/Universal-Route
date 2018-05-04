@@ -32,13 +32,5 @@ describe('Router test', function () {
     let h1 = rendered.querySelectorAll("h1");
 
     assert.equal(h1[0].textContent, 'Home');
-
-    // const html = renderToString(
-    //   <Provider store={store}>
-    //     <Router location="/" />
-    //   </Provider>
-    // );
-    //
-    // console.log(html);
   });
 });

@@ -1,8 +1,8 @@
 (function (global, factory) {
   if (typeof define === "function" && define.amd) {
-    define(["exports", "./action.js"], factory);
+    define(["exports", "./action"], factory);
   } else if (typeof exports !== "undefined") {
-    factory(exports, require("./action.js"));
+    factory(exports, require("./action"));
   } else {
     var mod = {
       exports: {}

@@ -31,48 +31,28 @@
 
   exports.default = {
     match: function match(routes, location, UnknownComponent) {
-      // loop through all the routes
-      var route = routes.map(function (route) {
-        // attempt to match
-        if (route.re.exec(location)) {
-          return route;
-        }
-        // remove null elements
-      }).filter(function (route) {
-        if (route) {
-          return true;
-        }
-        return false;
-        // condense array to object
-      }).reduce(function (result, item) {
-        return item;
-      }, {});
+      var route = routes.reduce(function (accululator, route) {
+        return accululator ? accululator : route.re.exec(location) ? route : false;
+      }, false);
 
-      // we couldn't match anything
-      if ((0, _keys2.default)(route).length == 0) {
-        return { Component: UnknownComponent };
-      }
-
-      // send the route
-      return route;
+      return route === false ? { Component: UnknownComponent } : route;
     },
 
     prepare: function prepare(routes) {
-      // loop over all routes
       return (0, _keys2.default)(routes).map(function (route) {
         var routeKeys = [];
         var re = (0, _pathToRegexp2.default)(route, routeKeys);
-        var component, reducer;
+        var component = void 0,
+            reducer = void 0;
 
         // handle a case where we want to be able to filter props by reducer key later
-        if (Object.prototype.toString.call(routes[route]) === '[object Array]') {
+        if (Object.prototype.toString.call(routes[route]) === "[object Array]") {
           component = routes[route][0];
           reducer = routes[route][1];
         } else {
           component = routes[route];
         }
 
-        // send out a more useful data structure
         return {
           re: re,
           keys: routeKeys,

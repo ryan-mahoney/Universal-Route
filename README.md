@@ -22,9 +22,9 @@ import Staff from './components/Staff.js';
 
 // associate paths to components
 const routes = {
-    '/':                    Home,
-    '/about':               About,
-    '/staff/:name':         Staff
+  '/':                    Home,
+  '/about':               About,
+  '/staff/:name':         Staff
 };
 
 // export the routes after prepating them

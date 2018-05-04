@@ -1,8 +1,8 @@
 (function (global, factory) {
   if (typeof define === "function" && define.amd) {
-    define(["module", "./router.js", "./helper.js", "./reducer.js", "./action.js"], factory);
+    define(["module", "./router", "./helper", "./reducer", "./action"], factory);
   } else if (typeof exports !== "undefined") {
-    factory(module, require("./router.js"), require("./helper.js"), require("./reducer.js"), require("./action.js"));
+    factory(module, require("./router"), require("./helper"), require("./reducer"), require("./action"));
   } else {
     var mod = {
       exports: {}
@@ -27,6 +27,13 @@
     createRouter: _router.createRouter,
     routesHelper: _helper2.default,
     pageReducer: _reducer.reducer,
-    routerActions: { CHANGE_PAGE: _action.CHANGE_PAGE, CHANGE_PAGE_ERROR: _action.CHANGE_PAGE_ERROR, CHANGE_PAGE_AUTH: _action.CHANGE_PAGE_AUTH, changePage: _action.changePage, changePageError: _action.changePageError, changePageAuth: _action.changePageAuth }
+    routerActions: {
+      CHANGE_PAGE: _action.CHANGE_PAGE,
+      CHANGE_PAGE_ERROR: _action.CHANGE_PAGE_ERROR,
+      CHANGE_PAGE_AUTH: _action.CHANGE_PAGE_AUTH,
+      changePage: _action.changePage,
+      changePageError: _action.changePageError,
+      changePageAuth: _action.changePageAuth
+    }
   };
 });

@@ -1,8 +1,8 @@
 (function (global, factory) {
   if (typeof define === "function" && define.amd) {
-    define(["exports", "babel-runtime/core-js/object/get-prototype-of", "babel-runtime/helpers/classCallCheck", "babel-runtime/helpers/createClass", "babel-runtime/helpers/possibleConstructorReturn", "babel-runtime/helpers/inherits", "react", "./router.js"], factory);
+    define(["exports", "babel-runtime/core-js/object/get-prototype-of", "babel-runtime/helpers/classCallCheck", "babel-runtime/helpers/createClass", "babel-runtime/helpers/possibleConstructorReturn", "babel-runtime/helpers/inherits", "react", "./router"], factory);
   } else if (typeof exports !== "undefined") {
-    factory(exports, require("babel-runtime/core-js/object/get-prototype-of"), require("babel-runtime/helpers/classCallCheck"), require("babel-runtime/helpers/createClass"), require("babel-runtime/helpers/possibleConstructorReturn"), require("babel-runtime/helpers/inherits"), require("react"), require("./router.js"));
+    factory(exports, require("babel-runtime/core-js/object/get-prototype-of"), require("babel-runtime/helpers/classCallCheck"), require("babel-runtime/helpers/createClass"), require("babel-runtime/helpers/possibleConstructorReturn"), require("babel-runtime/helpers/inherits"), require("react"), require("./router"));
   } else {
     var mod = {
       exports: {}
@@ -46,10 +46,8 @@
     (0, _createClass3.default)(AuthorizationComponent, [{
       key: "componentDidMount",
       value: function componentDidMount() {
-        // read token from local storage
         var token = localStorage.getItem("token");
 
-        // validate input
         if (!token) {
           document.location = this.props.redirect;
           return;
