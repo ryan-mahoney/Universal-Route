@@ -29,11 +29,7 @@
     pageReducer: _reducer.reducer,
     routerActions: {
       CHANGE_PAGE: _action.CHANGE_PAGE,
-      CHANGE_PAGE_ERROR: _action.CHANGE_PAGE_ERROR,
-      CHANGE_PAGE_AUTH: _action.CHANGE_PAGE_AUTH,
-      changePage: _action.changePage,
-      changePageError: _action.changePageError,
-      changePageAuth: _action.changePageAuth
+      changePage: _action.changePage
     }
   };
 });
