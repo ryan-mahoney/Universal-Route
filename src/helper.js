@@ -1,15 +1,30 @@
 import React from "react";
 import pathToRegexp from "path-to-regexp";
 
-export default {
-  match: (routes, location, UnknownComponent) => {
-    const route = routes.reduce(
-      (accululator, route) =>
-        accululator ? accululator : route.re.exec(location) ? route : false,
-      false
-    );
+const match = (routes, location) =>
+  routes.reduce(
+    (accululator, route) =>
+      accululator ? accululator : route.re.exec(location) ? route : false,
+    false
+  );
 
-    return route === false ? { Component: UnknownComponent } : route;
+const Generic404 = () => (
+  <div>
+    <h1>404</h1>
+    <p>Page not found</p>
+  </div>
+);
+
+export default {
+  match: (routes, location) => {
+    let route = match(routes, location);
+    if (!route) {
+      route = match(routes, "/404");
+    }
+    if (!route) {
+      route = { Component: Generic404 };
+    }
+    return route;
   },
 
   prepare: routes =>

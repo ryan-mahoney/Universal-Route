@@ -29,13 +29,39 @@
     };
   }
 
-  exports.default = {
-    match: function match(routes, location, UnknownComponent) {
-      var route = routes.reduce(function (accululator, route) {
-        return accululator ? accululator : route.re.exec(location) ? route : false;
-      }, false);
+  var _match = function _match(routes, location) {
+    return routes.reduce(function (accululator, route) {
+      return accululator ? accululator : route.re.exec(location) ? route : false;
+    }, false);
+  };
 
-      return route === false ? { Component: UnknownComponent } : route;
+  var Generic404 = function Generic404() {
+    return _react2.default.createElement(
+      "div",
+      null,
+      _react2.default.createElement(
+        "h1",
+        null,
+        "404"
+      ),
+      _react2.default.createElement(
+        "p",
+        null,
+        "Page not found"
+      )
+    );
+  };
+
+  exports.default = {
+    match: function match(routes, location) {
+      var route = _match(routes, location);
+      if (!route) {
+        route = _match(routes, "/404");
+      }
+      if (!route) {
+        route = { Component: Generic404 };
+      }
+      return route;
     },
 
     prepare: function prepare(routes) {
