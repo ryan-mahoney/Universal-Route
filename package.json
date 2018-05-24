@@ -1,6 +1,6 @@
 {
   "name": "universal-route",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "Routing system for React and Redux",
   "repository": {
     "type": "git",
