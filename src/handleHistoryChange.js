@@ -1,6 +1,7 @@
 import appHistory from "./history";
 import nprogress from "nprogress";
 import axios from "axios";
+import uuidv4 from "uuid/v4";
 import {
   getScrollPosition,
   getScrollFromSessionStorage,
@@ -76,7 +77,7 @@ export default changePage => {
         : "/unauthorized";
     }
 
-    // call change page redux action to trigger re-rendering
+    // call change page action to trigger re-rendering
     changePage(data);
 
     // set page title
