@@ -6,7 +6,7 @@ A Router keeps your UI in sync with the URL. Universal Router is small because i
 
 - associate [URL patterns](https://github.com/pillarjs/path-to-regexp) with a top-level React component
 - make an XHR request on each history transition, switch displayed component after success
-- populate Redux store with returned page data
+- start / stop progress page loading indicator
 
 ### Defining Routes
 routes.js
