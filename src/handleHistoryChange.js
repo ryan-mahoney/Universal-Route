@@ -39,8 +39,7 @@ export default changePage => {
       .get(path, {
         cancelToken: requestCancellation.token,
         headers: {
-          "Content-Type": "application/json",
-          Authorization: "Bearer " + localStorage.getItem("token")
+          "Content-Type": "application/json"
         }
       })
       .catch(error => {

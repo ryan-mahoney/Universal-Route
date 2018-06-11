@@ -74,8 +74,7 @@
                 return _axios2.default.get(path, {
                   cancelToken: requestCancellation.token,
                   headers: {
-                    "Content-Type": "application/json",
-                    Authorization: "Bearer " + localStorage.getItem("token")
+                    "Content-Type": "application/json"
                   }
                 }).catch(function (error) {
                   return error.response || null;
