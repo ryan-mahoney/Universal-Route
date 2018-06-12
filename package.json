@@ -1,6 +1,6 @@
 {
   "name": "universal-route",
-  "version": "2.0.2",
+  "version": "2.0.3",
   "description": "Routing system for React and Redux",
   "repository": {
     "type": "git",
@@ -40,7 +40,6 @@
     "react-dom": "^16.4.0",
     "axios": "^0.18.0",
     "nprogress": "^0.2.0",
-    "history": "^4.7.2",
     "mocha": "^5.2.0",
     "jsdom": "^11.11.0",
     "jsdom-global": "^3.0.2",
@@ -50,11 +49,11 @@
     "react": "^16.4.0",
     "react-dom": "^16.4.0",
     "axios": "^0.18.0",
-    "nprogress": "^0.2.0",
-    "history": "^4.7.2"
+    "nprogress": "^0.2.0"
   },
   "dependencies": {
     "path-to-regexp": "^2.2.1",
-    "uuid": "^3.2.1"
+    "uuid": "^3.2.1",
+    "history": "^4.7.2"
   }
 }
