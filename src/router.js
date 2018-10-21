@@ -26,18 +26,18 @@ export const navigate = to => {
 };
 
 // expects a "prepared" list of routes
-export const createRouter = (routes) => {
-  return props => {
-    // register the listener once
-    if (!handleSyncRegistered) {
-      handleHistoryChange(props.changePage);
-      handleSyncRegistered = true;
-    }
+export const createRouter = routes => props => {
+  // register the listener once
+  if (!handleSyncRegistered) {
+    handleHistoryChange(props.changePage);
+    handleSyncRegistered = true;
+  }
 
-    const { Component } = helper.match(
-      routes,
-      props.page.location.split("?", 1)[0]
-    );
-    return <Component {...props} />;
-  };
+  const { Component } = helper.match(
+    routes,
+    props.page && props.page.location
+      ? props.page.location.split("?", 1)[0]
+      : "/"
+  );
+  return <Component {...props} />;
 };
