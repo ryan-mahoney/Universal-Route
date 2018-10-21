@@ -62,7 +62,7 @@
         handleSyncRegistered = true;
       }
 
-      var _helper$match = _helper2.default.match(routes, props.page.location.split("?", 1)[0]),
+      var _helper$match = _helper2.default.match(routes, props.page && props.page.location ? props.page.location.split("?", 1)[0] : "/"),
           Component = _helper$match.Component;
 
       return _react2.default.createElement(Component, props);

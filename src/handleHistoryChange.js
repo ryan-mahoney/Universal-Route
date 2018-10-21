@@ -16,12 +16,11 @@ export default changePage => {
 
   // listen for changes to the current location
   appHistory.listen(async (location, action) => {
-    console.log(location);
     // determine if location actually change, ignoring hash changes
     const check = `${location.state ? `${location.state}:` : ""}${
       location.pathname
     }${location.search ? `?${location.search}` : ""}`;
-    if (check === lastLocation) {
+    if (check === lastLocation && location.hash !== "") {
       return;
     }
     lastLocation = check;

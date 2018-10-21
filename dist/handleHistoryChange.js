@@ -55,18 +55,17 @@
           while (1) {
             switch (_context.prev = _context.next) {
               case 0:
-                console.log(location);
                 // determine if location actually change, ignoring hash changes
                 check = "" + (location.state ? location.state + ":" : "") + location.pathname + (location.search ? "?" + location.search : "");
 
-                if (!(check === lastLocation)) {
-                  _context.next = 4;
+                if (!(check === lastLocation && location.hash !== "")) {
+                  _context.next = 3;
                   break;
                 }
 
                 return _context.abrupt("return");
 
-              case 4:
+              case 3:
                 lastLocation = check;
 
                 // clear and start
@@ -85,7 +84,7 @@
                   requestCancellation.cancel("Override a previous request");
                 }
                 requestCancellation = CancelToken.source();
-                _context.next = 14;
+                _context.next = 13;
                 return _axios2.default.get(path, {
                   cancelToken: requestCancellation.token,
                   headers: {
@@ -95,7 +94,7 @@
                   return error.response || null;
                 });
 
-              case 14:
+              case 13:
                 response = _context.sent;
 
 
@@ -105,31 +104,31 @@
                 // if there was not response, do nothing
 
                 if (!(response === null)) {
-                  _context.next = 18;
+                  _context.next = 17;
                   break;
                 }
 
                 return _context.abrupt("return");
 
-              case 18:
+              case 17:
                 if (!(response.status[0] == 5)) {
-                  _context.next = 21;
+                  _context.next = 20;
                   break;
                 }
 
                 changePage((0, _assign2.default)({}, response.data, { location: "/500" }));
                 return _context.abrupt("return");
 
-              case 21:
+              case 20:
                 if (!(response.status == 404)) {
-                  _context.next = 24;
+                  _context.next = 23;
                   break;
                 }
 
                 changePage((0, _assign2.default)({}, response.data, { location: "/404" }));
                 return _context.abrupt("return");
 
-              case 24:
+              case 23:
                 data = (0, _assign2.default)({}, response.data.page, {
                   location: location.pathname
                 });
@@ -158,7 +157,7 @@
                   }
                 }
 
-              case 29:
+              case 28:
               case "end":
                 return _context.stop();
             }
