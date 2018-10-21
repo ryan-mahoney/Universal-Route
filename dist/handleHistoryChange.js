@@ -39,6 +39,7 @@
 
   // initilize a place-holder for the last request cancellation token
   var requestCancellation = false;
+  var lastLocation = null;
 
   exports.default = function (changePage) {
     // handle server rendered case
@@ -49,11 +50,25 @@
     // listen for changes to the current location
     _history2.default.listen(function () {
       var _ref = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee(location, action) {
-        var uuid, path, CancelToken, response, data, previousScroll;
+        var check, uuid, path, CancelToken, response, data, previousScroll;
         return _regenerator2.default.wrap(function _callee$(_context) {
           while (1) {
             switch (_context.prev = _context.next) {
               case 0:
+                console.log(location);
+                // determine if location actually change, ignoring hash changes
+                check = "" + (location.state ? location.state + ":" : "") + location.pathname + (location.search ? "?" + location.search : "");
+
+                if (!(check === lastLocation)) {
+                  _context.next = 4;
+                  break;
+                }
+
+                return _context.abrupt("return");
+
+              case 4:
+                lastLocation = check;
+
                 // clear and start
                 _nprogress2.default.done();
                 _nprogress2.default.start();
@@ -70,7 +85,7 @@
                   requestCancellation.cancel("Override a previous request");
                 }
                 requestCancellation = CancelToken.source();
-                _context.next = 9;
+                _context.next = 14;
                 return _axios2.default.get(path, {
                   cancelToken: requestCancellation.token,
                   headers: {
@@ -80,7 +95,7 @@
                   return error.response || null;
                 });
 
-              case 9:
+              case 14:
                 response = _context.sent;
 
 
@@ -90,31 +105,31 @@
                 // if there was not response, do nothing
 
                 if (!(response === null)) {
-                  _context.next = 13;
+                  _context.next = 18;
                   break;
                 }
 
                 return _context.abrupt("return");
 
-              case 13:
+              case 18:
                 if (!(response.status[0] == 5)) {
-                  _context.next = 16;
+                  _context.next = 21;
                   break;
                 }
 
                 changePage((0, _assign2.default)({}, response.data, { location: "/500" }));
                 return _context.abrupt("return");
 
-              case 16:
+              case 21:
                 if (!(response.status == 404)) {
-                  _context.next = 19;
+                  _context.next = 24;
                   break;
                 }
 
                 changePage((0, _assign2.default)({}, response.data, { location: "/404" }));
                 return _context.abrupt("return");
 
-              case 19:
+              case 24:
                 data = (0, _assign2.default)({}, response.data.page, {
                   location: location.pathname
                 });
@@ -143,7 +158,7 @@
                   }
                 }
 
-              case 24:
+              case 29:
               case "end":
                 return _context.stop();
             }

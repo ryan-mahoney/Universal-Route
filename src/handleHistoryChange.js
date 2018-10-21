@@ -2,14 +2,11 @@ import appHistory from "./history";
 import nprogress from "nprogress";
 import axios from "axios";
 import uuidv4 from "uuid/v4";
-import {
-  getScrollPosition,
-  getScrollFromSessionStorage,
-  setScrollToSessionStorage
-} from "./scroll";
+import { getScrollFromSessionStorage } from "./scroll";
 
 // initilize a place-holder for the last request cancellation token
-var requestCancellation = false;
+let requestCancellation = false;
+let lastLocation = null;
 
 export default changePage => {
   // handle server rendered case
@@ -19,6 +16,16 @@ export default changePage => {
 
   // listen for changes to the current location
   appHistory.listen(async (location, action) => {
+    console.log(location);
+    // determine if location actually change, ignoring hash changes
+    const check = `${location.state ? `${location.state}:` : ""}${
+      location.pathname
+    }${location.search ? `?${location.search}` : ""}`;
+    if (check === lastLocation) {
+      return;
+    }
+    lastLocation = check;
+
     // clear and start
     nprogress.done();
     nprogress.start();

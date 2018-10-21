@@ -1,22 +1,24 @@
 (function (global, factory) {
   if (typeof define === "function" && define.amd) {
-    define(["exports", "babel-runtime/core-js/object/assign", "babel-runtime/core-js/json/stringify"], factory);
+    define(["exports", "babel-runtime/helpers/defineProperty", "babel-runtime/core-js/object/assign", "babel-runtime/core-js/json/stringify"], factory);
   } else if (typeof exports !== "undefined") {
-    factory(exports, require("babel-runtime/core-js/object/assign"), require("babel-runtime/core-js/json/stringify"));
+    factory(exports, require("babel-runtime/helpers/defineProperty"), require("babel-runtime/core-js/object/assign"), require("babel-runtime/core-js/json/stringify"));
   } else {
     var mod = {
       exports: {}
     };
-    factory(mod.exports, global.assign, global.stringify);
+    factory(mod.exports, global.defineProperty, global.assign, global.stringify);
     global.scroll = mod.exports;
   }
-})(this, function (exports, _assign, _stringify) {
+})(this, function (exports, _defineProperty2, _assign, _stringify) {
   "use strict";
 
   Object.defineProperty(exports, "__esModule", {
     value: true
   });
   exports.getScrollFromSessionStorage = exports.setScrollToSessionStorage = exports.getScrollPosition = undefined;
+
+  var _defineProperty3 = _interopRequireDefault(_defineProperty2);
 
   var _assign2 = _interopRequireDefault(_assign);
 
@@ -36,11 +38,7 @@
   };
 
   var setScrollToSessionStorage = exports.setScrollToSessionStorage = function setScrollToSessionStorage() {
-    var path = window.location.pathname;
-    var data = (0, _stringify2.default)((0, _assign2.default)({}, getScrollFromSessionStorage("*") || {}, {
-      path: getScrollPosition()
-    }));
-    sessionStorage.setItem("scroll", data);
+    return sessionStorage.setItem("scroll", (0, _stringify2.default)((0, _assign2.default)({}, getScrollFromSessionStorage("*") || {}, (0, _defineProperty3.default)({}, window.location.pathname, getScrollPosition()))));
   };
 
   var getScrollFromSessionStorage = exports.getScrollFromSessionStorage = function getScrollFromSessionStorage(url) {
