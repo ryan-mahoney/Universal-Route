@@ -2,12 +2,14 @@
 
 var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefault");
 
+var _interopRequireWildcard = require("@babel/runtime/helpers/interopRequireWildcard");
+
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.createRouter = exports.navigate = exports.Link = void 0;
 
-var _react = _interopRequireDefault(require("react"));
+var _react = _interopRequireWildcard(require("react"));
 
 var _history = _interopRequireDefault(require("./history"));
 
@@ -45,18 +47,25 @@ var navigate = function navigate(to) {
 
 exports.navigate = navigate;
 
-var createRouter = function createRouter(routes) {
+var createRouter = function createRouter(routes, store) {
   return function (props) {
-    // register the listener once
-    if (!handleSyncRegistered) {
-      (0, _handleHistoryChange["default"])(props.changePage);
+    var appState = store ? (0, _react.useContext)(store) : {
+      state: props,
+      dispatch: false
+    };
+    var state = appState.state,
+        dispatch = appState.dispatch;
+    var location = state.location; // register the listener once
+
+    if (!handleSyncRegistered && dispatch) {
+      (0, _handleHistoryChange["default"])(dispatch);
       handleSyncRegistered = true;
     }
 
-    var _helper$match = _helper["default"].match(routes, props.page && props.page.location ? props.page.location.split("?", 1)[0] : "/"),
+    var _helper$match = _helper["default"].match(routes, location ? location.split("?", 1)[0] : "/"),
         Component = _helper$match.Component;
 
-    return /*#__PURE__*/_react["default"].createElement(Component, props);
+    return /*#__PURE__*/_react["default"].createElement(Component, state);
   };
 };
 

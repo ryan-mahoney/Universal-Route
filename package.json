@@ -1,6 +1,6 @@
 {
   "name": "universal-route",
-  "version": "2.0.5",
+  "version": "3.0.0",
   "description": "Routing system for React and Redux",
   "repository": {
     "type": "git",
@@ -17,7 +17,7 @@
   "main": "dist/index.js",
   "scripts": {
     "build": "node_modules/@babel/cli/bin/babel.js src --out-dir ./dist",
-    "test": "node_modules/mocha/bin/mocha --require jsdom-global --require mock-local-storage"
+    "test": "node_modules/mocha/bin/mocha --require mock-local-storage"
   },
   "babel": {
     "presets": [
@@ -40,13 +40,11 @@
     "axios": "^0.21.0",
     "enzyme": "^3.11.0",
     "jsdom": "^16.4.0",
-    "jsdom-global": "^3.0.2",
     "mocha": "^8.2.1",
     "mock-local-storage": "^1.1.15",
     "nprogress": "^0.2.0",
     "react": "^17.0.1",
-    "sinon": "^9.2.2",
-    "z-container": "1.0.1"
+    "sinon": "^9.2.2"
   },
   "peerDependencies": {
     "axios": "^0.21.0",
