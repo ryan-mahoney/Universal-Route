@@ -1,30 +1,14 @@
-(function (global, factory) {
-  if (typeof define === "function" && define.amd) {
-    define(["module", "./router", "./helper"], factory);
-  } else if (typeof exports !== "undefined") {
-    factory(module, require("./router"), require("./helper"));
-  } else {
-    var mod = {
-      exports: {}
-    };
-    factory(mod, global.router, global.helper);
-    global.index = mod.exports;
-  }
-})(this, function (module, _router, _helper) {
-  "use strict";
+"use strict";
 
-  var _helper2 = _interopRequireDefault(_helper);
+var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefault");
 
-  function _interopRequireDefault(obj) {
-    return obj && obj.__esModule ? obj : {
-      default: obj
-    };
-  }
+var _router = require("./router");
 
-  module.exports = {
-    Link: _router.Link,
-    navigate: _router.navigate,
-    createRouter: _router.createRouter,
-    routesHelper: _helper2.default
-  };
-});
+var _helper = _interopRequireDefault(require("./helper"));
+
+module.exports = {
+  Link: _router.Link,
+  navigate: _router.navigate,
+  createRouter: _router.createRouter,
+  routesHelper: _helper["default"]
+};
