@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useContext } from "react";
 import appHistory from "./history";
 import { setScrollToSessionStorage } from "./scroll";
 import helper from "./helper";
@@ -6,8 +6,8 @@ import handleHistoryChange from "./handleHistoryChange";
 
 var handleSyncRegistered = false;
 
-export const Link = props => {
-  const handleClick = e => {
+export const Link = (props) => {
+  const handleClick = (e) => {
     e.preventDefault();
     setScrollToSessionStorage();
     appHistory.push(props.to);
@@ -20,24 +20,28 @@ export const Link = props => {
   );
 };
 
-export const navigate = to => {
+export const navigate = (to) => {
   setScrollToSessionStorage();
   appHistory.push(to);
 };
 
 // expects a "prepared" list of routes
-export const createRouter = routes => props => {
+export const createRouter = (routes, store) => (props) => {
+  const appState = store
+    ? useContext(store)
+    : { state: props, dispatch: false };
+  const { state, dispatch } = appState;
+  const location = state.location;
+
   // register the listener once
-  if (!handleSyncRegistered) {
-    handleHistoryChange(props.changePage);
+  if (!handleSyncRegistered && dispatch) {
+    handleHistoryChange(dispatch);
     handleSyncRegistered = true;
   }
 
   const { Component } = helper.match(
     routes,
-    props.page && props.page.location
-      ? props.page.location.split("?", 1)[0]
-      : "/"
+    location ? location.split("?", 1)[0] : "/"
   );
-  return <Component {...props} />;
+  return <Component {...state} />;
 };

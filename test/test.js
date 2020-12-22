@@ -41,6 +41,6 @@ describe("Router test", () => {
 
     assert(wrapper.contains(<h1>Home</h1>) === true);
 
-    wrapper.find("#about").simulate("click");
+    //wrapper.find("#about").simulate("click");
   });
 });

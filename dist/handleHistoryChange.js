@@ -9,6 +9,8 @@ exports["default"] = void 0;
 
 var _regenerator = _interopRequireDefault(require("@babel/runtime/regenerator"));
 
+var _defineProperty2 = _interopRequireDefault(require("@babel/runtime/helpers/defineProperty"));
+
 var _asyncToGenerator2 = _interopRequireDefault(require("@babel/runtime/helpers/asyncToGenerator"));
 
 var _history = _interopRequireDefault(require("./history"));
@@ -21,11 +23,15 @@ var _uuid = require("uuid");
 
 var _scroll = require("./scroll");
 
+function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
+
+function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys(Object(source), true).forEach(function (key) { (0, _defineProperty2["default"])(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
+
 // initilize a place-holder for the last request cancellation token
 var requestCancellation = false;
 var lastLocation = null;
 
-var _default = function _default(changePage) {
+var _default = function _default(dispatch) {
   // handle server rendered case
   if (!_history["default"]) {
     return;
@@ -33,23 +39,24 @@ var _default = function _default(changePage) {
 
 
   _history["default"].listen( /*#__PURE__*/function () {
-    var _ref = (0, _asyncToGenerator2["default"])( /*#__PURE__*/_regenerator["default"].mark(function _callee(location, action) {
-      var check, uuid, path, CancelToken, response, data, previousScroll;
+    var _ref = (0, _asyncToGenerator2["default"])( /*#__PURE__*/_regenerator["default"].mark(function _callee(historyEvent) {
+      var location, action, check, uuid, path, CancelToken, response, data, previousScroll;
       return _regenerator["default"].wrap(function _callee$(_context) {
         while (1) {
           switch (_context.prev = _context.next) {
             case 0:
-              // determine if location actually change, ignoring hash changes
+              location = historyEvent.location, action = historyEvent.action; // determine if location actually change, ignoring hash changes
+
               check = "".concat(location.state ? "".concat(location.state, ":") : "").concat(location.pathname).concat(location.search ? "?".concat(location.search) : "");
 
               if (!(check === lastLocation && location.hash !== "")) {
-                _context.next = 3;
+                _context.next = 4;
                 break;
               }
 
               return _context.abrupt("return");
 
-            case 3:
+            case 4:
               lastLocation = check; // clear and start
 
               _nprogress["default"].done();
@@ -67,7 +74,7 @@ var _default = function _default(changePage) {
               }
 
               requestCancellation = CancelToken.source();
-              _context.next = 13;
+              _context.next = 14;
               return _axios["default"].get(path, {
                 cancelToken: requestCancellation.token,
                 headers: {
@@ -77,7 +84,7 @@ var _default = function _default(changePage) {
                 return error.response || null;
               });
 
-            case 13:
+            case 14:
               response = _context.sent;
 
               // stop displaying progress bar
@@ -85,45 +92,54 @@ var _default = function _default(changePage) {
 
 
               if (!(response === null)) {
-                _context.next = 17;
+                _context.next = 18;
                 break;
               }
 
               return _context.abrupt("return");
 
-            case 17:
+            case 18:
               if (!(response.status[0] == 5)) {
-                _context.next = 20;
+                _context.next = 21;
                 break;
               }
 
-              changePage(Object.assign({}, response.data, {
-                location: "/500"
-              }));
+              dispatch({
+                type: "CHANGE_PAGE",
+                data: _objectSpread(_objectSpread({}, response.data), {}, {
+                  location: "/500"
+                })
+              });
               return _context.abrupt("return");
 
-            case 20:
+            case 21:
               if (!(response.status == 404)) {
-                _context.next = 23;
+                _context.next = 24;
                 break;
               }
 
-              changePage(Object.assign({}, response.data, {
-                location: "/404"
-              }));
+              dispatch({
+                type: "CHANGE_PAGE",
+                data: _objectSpread(_objectSpread({}, response.data), {}, {
+                  location: "/404"
+                })
+              });
               return _context.abrupt("return");
 
-            case 23:
-              data = Object.assign({}, response.data.page, {
+            case 24:
+              data = _objectSpread(_objectSpread({}, response.data), {}, {
                 location: location.pathname
               }); // handle authorization based redirection
 
-              if (response.data.page.authorization) {
-                data.location = response.data.page.authorization.location ? response.data.page.authorization.location : "/unauthorized";
+              if (response.data.authorization) {
+                data.location = response.data.authorization.location ? response.data.authorization.location : "/unauthorized";
               } // call change page action to trigger re-rendering
 
 
-              changePage(data); // set page title
+              dispatch({
+                type: "CHANGE_PAGE",
+                data: data
+              }); // set page title
 
               document.title = response.data.title ? response.data.title : "";
 
@@ -139,7 +155,7 @@ var _default = function _default(changePage) {
                 }
               }
 
-            case 28:
+            case 29:
             case "end":
               return _context.stop();
           }
@@ -147,7 +163,7 @@ var _default = function _default(changePage) {
       }, _callee);
     }));
 
-    return function (_x, _x2) {
+    return function (_x) {
       return _ref.apply(this, arguments);
     };
   }());

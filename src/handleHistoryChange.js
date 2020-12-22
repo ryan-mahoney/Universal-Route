@@ -8,14 +8,16 @@ import { getScrollFromSessionStorage } from "./scroll";
 let requestCancellation = false;
 let lastLocation = null;
 
-export default (changePage) => {
+export default (dispatch) => {
   // handle server rendered case
   if (!appHistory) {
     return;
   }
 
   // listen for changes to the current location
-  appHistory.listen(async (location, action) => {
+  appHistory.listen(async (historyEvent) => {
+    const { location, action } = historyEvent;
+
     // determine if location actually change, ignoring hash changes
     const check = `${location.state ? `${location.state}:` : ""}${
       location.pathname
@@ -62,28 +64,32 @@ export default (changePage) => {
 
     // handle 500 error
     if (response.status[0] == 5) {
-      changePage(Object.assign({}, response.data, { location: "/500" }));
+      dispatch({
+        type: "CHANGE_PAGE",
+        data: { ...response.data, location: "/500" },
+      });
       return;
     }
 
     if (response.status == 404) {
-      changePage(Object.assign({}, response.data, { location: "/404" }));
+      dispatch({
+        type: "CHANGE_PAGE",
+        data: { ...response.data, location: "/404" },
+      });
       return;
     }
 
-    let data = Object.assign({}, response.data.page, {
-      location: location.pathname,
-    });
+    let data = { ...response.data, location: location.pathname };
 
     // handle authorization based redirection
-    if (response.data.page.authorization) {
-      data.location = response.data.page.authorization.location
-        ? response.data.page.authorization.location
+    if (response.data.authorization) {
+      data.location = response.data.authorization.location
+        ? response.data.authorization.location
         : "/unauthorized";
     }
 
     // call change page action to trigger re-rendering
-    changePage(data);
+    dispatch({ type: "CHANGE_PAGE", data: data });
 
     // set page title
     document.title = response.data.title ? response.data.title : "";
