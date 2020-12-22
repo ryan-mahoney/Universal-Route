@@ -1,14 +1,14 @@
 import appHistory from "./history";
 import nprogress from "nprogress";
 import axios from "axios";
-import uuidv4 from "uuid/v4";
+import { v4 as uuidv4 } from "uuid";
 import { getScrollFromSessionStorage } from "./scroll";
 
 // initilize a place-holder for the last request cancellation token
 let requestCancellation = false;
 let lastLocation = null;
 
-export default changePage => {
+export default (changePage) => {
   // handle server rendered case
   if (!appHistory) {
     return;
@@ -45,10 +45,10 @@ export default changePage => {
       .get(path, {
         cancelToken: requestCancellation.token,
         headers: {
-          "Content-Type": "application/json"
-        }
+          "Content-Type": "application/json",
+        },
       })
-      .catch(error => {
+      .catch((error) => {
         return error.response || null;
       });
 
@@ -72,7 +72,7 @@ export default changePage => {
     }
 
     let data = Object.assign({}, response.data.page, {
-      location: location.pathname
+      location: location.pathname,
     });
 
     // handle authorization based redirection

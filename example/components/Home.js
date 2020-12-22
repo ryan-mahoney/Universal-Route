@@ -1,14 +1,16 @@
 import React from "react";
 import { Link } from "./../../src/router.js";
 
-const Home = props => (
+const Home = (props) => (
   <div>
     <h1>Home</h1>
     <div>
       Render Mode: {props.page && props.page.mode ? props.page.mode : "?"}
     </div>
     <div>
-      <Link to="/about">About</Link>
+      <Link id="about" to="/about">
+        About
+      </Link>
     </div>
     <div>
       <Link to="/x">Unknown</Link>

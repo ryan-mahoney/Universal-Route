@@ -1,5 +1,5 @@
 import React from "react";
-import pathToRegexp from "path-to-regexp";
+import { pathToRegexp } from "path-to-regexp";
 
 const match = (routes, location) =>
   routes.reduce(
@@ -27,8 +27,8 @@ export default {
     return route;
   },
 
-  prepare: routes =>
-    Object.keys(routes).map(route => {
+  prepare: (routes) =>
+    Object.keys(routes).map((route) => {
       const routeKeys = [];
       const re = pathToRegexp(route, routeKeys);
       let component, reducer;
@@ -45,7 +45,7 @@ export default {
         re: re,
         keys: routeKeys,
         Component: component,
-        reducerKey: reducer
+        reducerKey: reducer,
       };
-    })
+    }),
 };

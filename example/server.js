@@ -1,11 +1,9 @@
 import Express from "express";
-import bodyParser from "body-parser";
 import fs from "fs";
 const app = Express();
 const port = 8000;
 
 import React from "react";
-import { createStore } from "redux";
 import { Provider } from "react-redux";
 import { renderToString } from "react-dom/server";
 import configureStore from "./store/configureStore";
@@ -63,9 +61,9 @@ app.get("/needauth", (req, res) => {
       page: {
         authorization: {
           redirect: "/notauthorized",
-          location: "/needauth"
-        }
-      }
+          location: "/needauth",
+        },
+      },
     })
   );
 });
@@ -92,7 +90,7 @@ function render(html, state) {
     </html>`;
 }
 
-app.listen(port, error => {
+app.listen(port, (error) => {
   if (error) {
     console.error(error);
   } else {
