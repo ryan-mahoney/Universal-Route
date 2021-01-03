@@ -1,13 +1,15 @@
 "use strict";
 
-var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefault");
-
 var _interopRequireWildcard = require("@babel/runtime/helpers/interopRequireWildcard");
+
+var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefault");
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.createRouter = exports.navigate = exports.Link = void 0;
+
+var _extends2 = _interopRequireDefault(require("@babel/runtime/helpers/extends"));
 
 var _react = _interopRequireWildcard(require("react"));
 
@@ -65,7 +67,9 @@ var createRouter = function createRouter(routes, store) {
     var _helper$match = _helper["default"].match(routes, location ? location.split("?", 1)[0] : "/"),
         Component = _helper$match.Component;
 
-    return /*#__PURE__*/_react["default"].createElement(Component, state);
+    return /*#__PURE__*/_react["default"].createElement(Component, (0, _extends2["default"])({}, state, {
+      dispatch: dispatch
+    }));
   };
 };
 

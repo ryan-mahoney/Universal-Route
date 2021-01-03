@@ -43,5 +43,5 @@ export const createRouter = (routes, store) => (props) => {
     routes,
     location ? location.split("?", 1)[0] : "/"
   );
-  return <Component {...state} />;
+  return <Component {...state} dispatch={dispatch} />;
 };
