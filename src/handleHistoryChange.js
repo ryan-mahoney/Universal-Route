@@ -4,24 +4,24 @@ import axios from "axios";
 import { v4 as uuidv4 } from "uuid";
 import { getScrollFromSessionStorage } from "./scroll";
 
-// initilize a place-holder for the last request cancellation token
+// initialize a place-holder for the last request cancellation token
 let requestCancellation = false;
 let lastLocation = null;
 
-export default (dispatch) => {
+export default dispatch => {
   // handle server rendered case
   if (!appHistory) {
     return;
   }
 
   // listen for changes to the current location
-  appHistory.listen(async (historyEvent) => {
+  appHistory.listen(async historyEvent => {
     const { location, action } = historyEvent;
 
     // determine if location actually change, ignoring hash changes
-    const check = `${location.state ? `${location.state}:` : ""}${
-      location.pathname
-    }${location.search ? `?${location.search}` : ""}`;
+    const check = `${location.state ? `${location.state}:` : ""}${location.pathname}${
+      location.search ? `?${location.search}` : ""
+    }`;
     if (check === lastLocation && location.hash !== "") {
       return;
     }
@@ -33,9 +33,7 @@ export default (dispatch) => {
 
     // decide which path to call
     const uuid = uuidv4();
-    let path = `${location.pathname}${location.search}${
-      location.search.indexOf("?") !== -1 ? "&" : "?"
-    }uuid=${uuid}`;
+    let path = `${location.pathname}${location.search}${location.search.indexOf("?") !== -1 ? "&" : "?"}uuid=${uuid}`;
 
     // do XHR request
     const CancelToken = axios.CancelToken;
@@ -47,10 +45,10 @@ export default (dispatch) => {
       .get(path, {
         cancelToken: requestCancellation.token,
         headers: {
-          "Content-Type": "application/json",
-        },
+          "Content-Type": "application/json"
+        }
       })
-      .catch((error) => {
+      .catch(error => {
         return error.response || null;
       });
 
@@ -66,7 +64,7 @@ export default (dispatch) => {
     if (response.status[0] == 5) {
       dispatch({
         type: "CHANGE_PAGE",
-        data: { ...response.data, location: "/500" },
+        data: { ...response.data, location: "/500" }
       });
       return;
     }
@@ -74,7 +72,7 @@ export default (dispatch) => {
     if (response.status == 404) {
       dispatch({
         type: "CHANGE_PAGE",
-        data: { ...response.data, location: "/404" },
+        data: { ...response.data, location: "/404" }
       });
       return;
     }
@@ -83,13 +81,11 @@ export default (dispatch) => {
 
     // handle authorization based redirection
     if (response.data.authorization) {
-      data.location = response.data.authorization.location
-        ? response.data.authorization.location
-        : "/unauthorized";
+      data.location = response.data.authorization.location ? response.data.authorization.location : "/unauthorized";
     }
 
     // call change page action to trigger re-rendering
-    dispatch({ type: "CHANGE_PAGE", data: data });
+    dispatch({ type: "CHANGE_PAGE", data });
 
     // set page title
     document.title = response.data.title ? response.data.title : "";
@@ -97,9 +93,7 @@ export default (dispatch) => {
     if (action == "PUSH") {
       window.scrollTo(0, 0);
     } else {
-      const previousScroll = getScrollFromSessionStorage(
-        window.location.pathname
-      );
+      const previousScroll = getScrollFromSessionStorage(window.location.pathname);
       if (previousScroll) {
         setTimeout(() => {
           window.scrollTo(previousScroll.x, previousScroll.y);
