@@ -45,18 +45,23 @@ var _default = function _default(dispatch) {
         while (1) {
           switch (_context.prev = _context.next) {
             case 0:
-              location = historyEvent.location, action = historyEvent.action; // determine if location actually change, ignoring hash changes
+              location = historyEvent.location, action = historyEvent.action; // set scroll position for replace
+
+              if (action == "REPLACE") {
+                (0, _scroll.setScrollToSessionStorage)();
+              } // determine if location actually change, ignoring hash changes
+
 
               check = "".concat(location.state ? "".concat(location.state, ":") : "").concat(location.pathname).concat(location.search ? "?".concat(location.search) : "");
 
               if (!(check === lastLocation && location.hash !== "")) {
-                _context.next = 4;
+                _context.next = 5;
                 break;
               }
 
               return _context.abrupt("return");
 
-            case 4:
+            case 5:
               lastLocation = check; // clear and start
 
               _nprogress["default"].done();
@@ -74,7 +79,7 @@ var _default = function _default(dispatch) {
               }
 
               requestCancellation = CancelToken.source();
-              _context.next = 14;
+              _context.next = 15;
               return _axios["default"].get(path, {
                 cancelToken: requestCancellation.token,
                 headers: {
@@ -84,7 +89,7 @@ var _default = function _default(dispatch) {
                 return error.response || null;
               });
 
-            case 14:
+            case 15:
               response = _context.sent;
 
               // stop displaying progress bar
@@ -92,15 +97,15 @@ var _default = function _default(dispatch) {
 
 
               if (!(response === null)) {
-                _context.next = 18;
+                _context.next = 19;
                 break;
               }
 
               return _context.abrupt("return");
 
-            case 18:
+            case 19:
               if (!(response.status[0] == 5)) {
-                _context.next = 21;
+                _context.next = 22;
                 break;
               }
 
@@ -112,9 +117,9 @@ var _default = function _default(dispatch) {
               });
               return _context.abrupt("return");
 
-            case 21:
+            case 22:
               if (!(response.status == 404)) {
-                _context.next = 24;
+                _context.next = 25;
                 break;
               }
 
@@ -126,7 +131,7 @@ var _default = function _default(dispatch) {
               });
               return _context.abrupt("return");
 
-            case 24:
+            case 25:
               data = _objectSpread(_objectSpread({}, response.data), {}, {
                 location: location.pathname
               }); // handle authorization based redirection
@@ -155,7 +160,7 @@ var _default = function _default(dispatch) {
                 }
               }
 
-            case 29:
+            case 30:
             case "end":
               return _context.stop();
           }

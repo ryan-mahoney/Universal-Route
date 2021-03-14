@@ -2,7 +2,7 @@ import appHistory from "./history";
 import nprogress from "nprogress";
 import axios from "axios";
 import { v4 as uuidv4 } from "uuid";
-import { getScrollFromSessionStorage } from "./scroll";
+import { getScrollFromSessionStorage, setScrollToSessionStorage } from "./scroll";
 
 // initialize a place-holder for the last request cancellation token
 let requestCancellation = false;
@@ -17,6 +17,11 @@ export default dispatch => {
   // listen for changes to the current location
   appHistory.listen(async historyEvent => {
     const { location, action } = historyEvent;
+
+    // set scroll position for replace
+    if (action == "REPLACE") {
+      setScrollToSessionStorage();
+    }
 
     // determine if location actually change, ignoring hash changes
     const check = `${location.state ? `${location.state}:` : ""}${location.pathname}${
