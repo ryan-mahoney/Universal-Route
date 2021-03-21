@@ -6,30 +6,38 @@ import handleHistoryChange from "./handleHistoryChange";
 
 var handleSyncRegistered = false;
 
-export const Link = (props) => {
-  const handleClick = (e) => {
+export const Link = ({ to, className, children, mode = "push" }) => {
+  const handleClick = e => {
     e.preventDefault();
-    setScrollToSessionStorage();
-    appHistory.push(props.to);
+    if (mode === "push") {
+      setScrollToSessionStorage();
+      appHistory.push(to);
+    }
+    if (mode === "replace") {
+      appHistory.replace(to);
+    }
   };
 
   return (
-    <a href={props.to} className={props.className} onClick={handleClick}>
-      {props.children}
+    <a href={to} className={className} onClick={handleClick}>
+      {children}
     </a>
   );
 };
 
-export const navigate = (to) => {
-  setScrollToSessionStorage();
-  appHistory.push(to);
+export const navigate = (to, mode = "push") => {
+  if (mode === "push") {
+    setScrollToSessionStorage();
+    appHistory.push(to);
+  }
+  if (mode === "replace") {
+    appHistory.replace(to);
+  }
 };
 
 // expects a "prepared" list of routes
-export const createRouter = (routes, store) => (props) => {
-  const appState = store
-    ? useContext(store)
-    : { state: props, dispatch: false };
+export const createRouter = (routes, store) => props => {
+  const appState = store ? useContext(store) : { state: props, dispatch: false };
   const { state, dispatch } = appState;
   const location = state.location;
 
@@ -39,9 +47,6 @@ export const createRouter = (routes, store) => (props) => {
     handleSyncRegistered = true;
   }
 
-  const { Component } = helper.match(
-    routes,
-    location ? location.split("?", 1)[0] : "/"
-  );
+  const { Component } = helper.match(routes, location ? location.split("?", 1)[0] : "/");
   return <Component {...state} dispatch={dispatch} />;
 };

@@ -23,27 +23,48 @@ var _handleHistoryChange = _interopRequireDefault(require("./handleHistoryChange
 
 var handleSyncRegistered = false;
 
-var Link = function Link(props) {
+var Link = function Link(_ref) {
+  var to = _ref.to,
+      className = _ref.className,
+      children = _ref.children,
+      _ref$mode = _ref.mode,
+      mode = _ref$mode === void 0 ? "push" : _ref$mode;
+
   var handleClick = function handleClick(e) {
     e.preventDefault();
-    (0, _scroll.setScrollToSessionStorage)();
 
-    _history["default"].push(props.to);
+    if (mode === "push") {
+      (0, _scroll.setScrollToSessionStorage)();
+
+      _history["default"].push(to);
+    }
+
+    if (mode === "replace") {
+      _history["default"].replace(to);
+    }
   };
 
   return /*#__PURE__*/_react["default"].createElement("a", {
-    href: props.to,
-    className: props.className,
+    href: to,
+    className: className,
     onClick: handleClick
-  }, props.children);
+  }, children);
 };
 
 exports.Link = Link;
 
 var navigate = function navigate(to) {
-  (0, _scroll.setScrollToSessionStorage)();
+  var mode = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : "push";
 
-  _history["default"].push(to);
+  if (mode === "push") {
+    (0, _scroll.setScrollToSessionStorage)();
+
+    _history["default"].push(to);
+  }
+
+  if (mode === "replace") {
+    _history["default"].replace(to);
+  }
 }; // expects a "prepared" list of routes
 
 

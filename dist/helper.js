@@ -12,8 +12,8 @@ var _react = _interopRequireDefault(require("react"));
 var _pathToRegexp = require("path-to-regexp");
 
 var _match = function match(routes, location) {
-  return routes.reduce(function (accululator, route) {
-    return accululator ? accululator : route.re.exec(location) ? route : false;
+  return routes.reduce(function (acc, route) {
+    return acc ? acc : route.re.exec(location) ? route : false;
   }, false);
 };
 
