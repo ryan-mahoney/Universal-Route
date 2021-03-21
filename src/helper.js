@@ -2,11 +2,7 @@ import React from "react";
 import { pathToRegexp } from "path-to-regexp";
 
 const match = (routes, location) =>
-  routes.reduce(
-    (accululator, route) =>
-      accululator ? accululator : route.re.exec(location) ? route : false,
-    false
-  );
+  routes.reduce((acc, route) => (acc ? acc : route.re.exec(location) ? route : false), false);
 
 const Generic404 = () => (
   <div>
@@ -27,8 +23,8 @@ export default {
     return route;
   },
 
-  prepare: (routes) =>
-    Object.keys(routes).map((route) => {
+  prepare: routes =>
+    Object.keys(routes).map(route => {
       const routeKeys = [];
       const re = pathToRegexp(route, routeKeys);
       let component, reducer;
@@ -45,7 +41,7 @@ export default {
         re: re,
         keys: routeKeys,
         Component: component,
-        reducerKey: reducer,
+        reducerKey: reducer
       };
-    }),
+    })
 };
