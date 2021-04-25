@@ -4,7 +4,7 @@ export const getScrollPosition = () => ({
 });
 
 export const setScrollToSessionStorage = () =>
-  !sessionStorage
+  typeof sessionStorage === "undefined"
     ? "{}"
     : sessionStorage.setItem(
         "scroll",
@@ -16,7 +16,7 @@ export const setScrollToSessionStorage = () =>
       );
 
 export const getScrollFromSessionStorage = url => {
-  if (!sessionStorage) return null;
+  if (typeof sessionStorage === "undefined") return null;
   const blob = sessionStorage.getItem("scroll");
   if (!blob) {
     return null;
