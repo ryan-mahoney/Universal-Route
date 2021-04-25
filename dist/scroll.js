@@ -19,12 +19,13 @@ var getScrollPosition = function getScrollPosition() {
 exports.getScrollPosition = getScrollPosition;
 
 var setScrollToSessionStorage = function setScrollToSessionStorage() {
-  return sessionStorage.setItem("scroll", JSON.stringify(Object.assign({}, getScrollFromSessionStorage("*") || {}, (0, _defineProperty2["default"])({}, window.location.pathname, getScrollPosition()))));
+  return !sessionStorage ? "{}" : sessionStorage.setItem("scroll", JSON.stringify(Object.assign({}, getScrollFromSessionStorage("*") || {}, (0, _defineProperty2["default"])({}, window.location.pathname, getScrollPosition()))));
 };
 
 exports.setScrollToSessionStorage = setScrollToSessionStorage;
 
 var getScrollFromSessionStorage = function getScrollFromSessionStorage(url) {
+  if (!sessionStorage) return null;
   var blob = sessionStorage.getItem("scroll");
 
   if (!blob) {
