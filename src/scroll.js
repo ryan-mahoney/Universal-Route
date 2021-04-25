@@ -1,19 +1,22 @@
 export const getScrollPosition = () => ({
   y: window.pageYOffset || document.documentElement.scrollTop,
-  x: window.pageXOffset || document.documentElement.scrollLeft,
+  x: window.pageXOffset || document.documentElement.scrollLeft
 });
 
 export const setScrollToSessionStorage = () =>
-  sessionStorage.setItem(
-    "scroll",
-    JSON.stringify(
-      Object.assign({}, getScrollFromSessionStorage("*") || {}, {
-        [window.location.pathname]: getScrollPosition(),
-      })
-    )
-  );
+  !sessionStorage
+    ? "{}"
+    : sessionStorage.setItem(
+        "scroll",
+        JSON.stringify(
+          Object.assign({}, getScrollFromSessionStorage("*") || {}, {
+            [window.location.pathname]: getScrollPosition()
+          })
+        )
+      );
 
-export const getScrollFromSessionStorage = (url) => {
+export const getScrollFromSessionStorage = url => {
+  if (!sessionStorage) return null;
   const blob = sessionStorage.getItem("scroll");
   if (!blob) {
     return null;
