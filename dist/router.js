@@ -28,7 +28,9 @@ var Link = function Link(_ref) {
       className = _ref.className,
       children = _ref.children,
       _ref$mode = _ref.mode,
-      mode = _ref$mode === void 0 ? "push" : _ref$mode;
+      mode = _ref$mode === void 0 ? "push" : _ref$mode,
+      onMouseEnter = _ref.onMouseEnter,
+      onMouseLeave = _ref.onMouseLeave;
 
   var handleClick = function handleClick(e) {
     e.preventDefault();
@@ -47,7 +49,9 @@ var Link = function Link(_ref) {
   return /*#__PURE__*/_react["default"].createElement("a", {
     href: to,
     className: className,
-    onClick: handleClick
+    onClick: handleClick,
+    onMouseEnter: onMouseEnter,
+    onMouseLeave: onMouseLeave
   }, children);
 };
 
