@@ -6,7 +6,7 @@ import handleHistoryChange from "./handleHistoryChange";
 
 var handleSyncRegistered = false;
 
-export const Link = ({ to, className, children, mode = "push" }) => {
+export const Link = ({ to, className, children, mode = "push", onMouseEnter, onMouseLeave }) => {
   const handleClick = e => {
     e.preventDefault();
     if (mode === "push") {
@@ -19,7 +19,7 @@ export const Link = ({ to, className, children, mode = "push" }) => {
   };
 
   return (
-    <a href={to} className={className} onClick={handleClick}>
+    <a href={to} className={className} onClick={handleClick} onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave}>
       {children}
     </a>
   );
