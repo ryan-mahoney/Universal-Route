@@ -8,14 +8,16 @@ import { getScrollFromSessionStorage, setScrollToSessionStorage } from "./scroll
 let requestCancellation = false;
 let lastLocation = null;
 
-export default dispatch => {
+const endsWith = (subject, suffix) => subject.indexOf(suffix, subject.length - suffix.length) !== -1;
+
+export default (dispatch) => {
   // handle server rendered case
   if (!appHistory) {
     return;
   }
 
   // listen for changes to the current location
-  appHistory.listen(async historyEvent => {
+  appHistory.listen(async (historyEvent) => {
     const { location, action } = historyEvent;
 
     // set scroll position for replace
@@ -50,10 +52,16 @@ export default dispatch => {
       .get(path, {
         cancelToken: requestCancellation.token,
         headers: {
-          "Content-Type": "application/json"
-        }
+          "Content-Type": "application/json",
+        },
       })
-      .catch(error => {
+      .then((response) => {
+        if (endsWith(response.request.responseURL, "access-denied")) {
+          window.location.href = "/";
+        }
+        return response;
+      })
+      .catch((error) => {
         return error.response || null;
       });
 
@@ -69,7 +77,7 @@ export default dispatch => {
     if (response.status[0] == 5) {
       dispatch({
         type: "CHANGE_PAGE",
-        data: { ...response.data, location: "/500" }
+        data: { ...response.data, location: "/500" },
       });
       return;
     }
@@ -77,7 +85,7 @@ export default dispatch => {
     if (response.status == 404) {
       dispatch({
         type: "CHANGE_PAGE",
-        data: { ...response.data, location: "/404" }
+        data: { ...response.data, location: "/404" },
       });
       return;
     }
