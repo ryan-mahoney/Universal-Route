@@ -5,7 +5,7 @@ var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefau
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.getScrollFromSessionStorage = exports.setScrollToSessionStorage = exports.getScrollPosition = void 0;
+exports.setScrollToSessionStorage = exports.getScrollPosition = exports.getScrollFromSessionStorage = void 0;
 
 var _defineProperty2 = _interopRequireDefault(require("@babel/runtime/helpers/defineProperty"));
 
