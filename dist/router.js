@@ -12,10 +12,10 @@ var _history = _interopRequireDefault(require("./history"));
 var _scroll = require("./scroll");
 var _helper = _interopRequireDefault(require("./helper"));
 var _handleHistoryChange = _interopRequireDefault(require("./handleHistoryChange"));
-function _getRequireWildcardCache(nodeInterop) { if (typeof WeakMap !== "function") return null; var cacheBabelInterop = new WeakMap(); var cacheNodeInterop = new WeakMap(); return (_getRequireWildcardCache = function _getRequireWildcardCache(nodeInterop) { return nodeInterop ? cacheNodeInterop : cacheBabelInterop; })(nodeInterop); }
-function _interopRequireWildcard(obj, nodeInterop) { if (!nodeInterop && obj && obj.__esModule) { return obj; } if (obj === null || _typeof(obj) !== "object" && typeof obj !== "function") { return { "default": obj }; } var cache = _getRequireWildcardCache(nodeInterop); if (cache && cache.has(obj)) { return cache.get(obj); } var newObj = {}; var hasPropertyDescriptor = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var key in obj) { if (key !== "default" && Object.prototype.hasOwnProperty.call(obj, key)) { var desc = hasPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : null; if (desc && (desc.get || desc.set)) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } newObj["default"] = obj; if (cache) { cache.set(obj, newObj); } return newObj; }
+function _getRequireWildcardCache(e) { if ("function" != typeof WeakMap) return null; var r = new WeakMap(), t = new WeakMap(); return (_getRequireWildcardCache = function _getRequireWildcardCache(e) { return e ? t : r; })(e); }
+function _interopRequireWildcard(e, r) { if (!r && e && e.__esModule) return e; if (null === e || "object" != _typeof(e) && "function" != typeof e) return { "default": e }; var t = _getRequireWildcardCache(r); if (t && t.has(e)) return t.get(e); var n = { __proto__: null }, a = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var u in e) if ("default" !== u && Object.prototype.hasOwnProperty.call(e, u)) { var i = a ? Object.getOwnPropertyDescriptor(e, u) : null; i && (i.get || i.set) ? Object.defineProperty(n, u, i) : n[u] = e[u]; } return n["default"] = e, t && t.set(e, n), n; }
 var handleSyncRegistered = false;
-var Link = function Link(_ref) {
+var Link = exports.Link = function Link(_ref) {
   var to = _ref.to,
     className = _ref.className,
     children = _ref.children,
@@ -41,8 +41,7 @@ var Link = function Link(_ref) {
     onMouseLeave: onMouseLeave
   }, children);
 };
-exports.Link = Link;
-var navigate = function navigate(to) {
+var navigate = exports.navigate = function navigate(to) {
   var mode = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : "push";
   if (mode === "push") {
     (0, _scroll.setScrollToSessionStorage)();
@@ -54,8 +53,7 @@ var navigate = function navigate(to) {
 };
 
 // expects a "prepared" list of routes
-exports.navigate = navigate;
-var createRouter = function createRouter(routes, store) {
+var createRouter = exports.createRouter = function createRouter(routes, store) {
   return function (props) {
     var appState = store ? (0, _react.useContext)(store) : {
       state: props,
@@ -77,4 +75,3 @@ var createRouter = function createRouter(routes, store) {
     }));
   };
 };
-exports.createRouter = createRouter;

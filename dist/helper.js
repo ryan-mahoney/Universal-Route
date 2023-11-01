@@ -15,7 +15,7 @@ var _match = function match(routes, location) {
 var Generic404 = function Generic404() {
   return /*#__PURE__*/_react["default"].createElement("div", null, /*#__PURE__*/_react["default"].createElement("h1", null, "404"), /*#__PURE__*/_react["default"].createElement("p", null, "Page not found"));
 };
-var _default = {
+var _default = exports["default"] = {
   match: function match(routes, location) {
     var route = _match(routes, location);
     if (!route) {
@@ -50,4 +50,3 @@ var _default = {
     });
   }
 };
-exports["default"] = _default;
