@@ -22,7 +22,9 @@ var Link = exports.Link = function Link(_ref) {
     _ref$mode = _ref.mode,
     mode = _ref$mode === void 0 ? "push" : _ref$mode,
     onMouseEnter = _ref.onMouseEnter,
-    onMouseLeave = _ref.onMouseLeave;
+    onMouseLeave = _ref.onMouseLeave,
+    _ref$style = _ref.style,
+    style = _ref$style === void 0 ? {} : _ref$style;
   var handleClick = function handleClick(e) {
     e.preventDefault();
     if (mode === "push") {
@@ -36,6 +38,7 @@ var Link = exports.Link = function Link(_ref) {
   return /*#__PURE__*/_react["default"].createElement("a", {
     href: to,
     className: className,
+    style: style,
     onClick: handleClick,
     onMouseEnter: onMouseEnter,
     onMouseLeave: onMouseLeave

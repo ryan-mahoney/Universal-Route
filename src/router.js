@@ -6,8 +6,16 @@ import handleHistoryChange from "./handleHistoryChange";
 
 var handleSyncRegistered = false;
 
-export const Link = ({ to, className, children, mode = "push", onMouseEnter, onMouseLeave }) => {
-  const handleClick = e => {
+export const Link = ({
+  to,
+  className,
+  children,
+  mode = "push",
+  onMouseEnter,
+  onMouseLeave,
+  style = {},
+}) => {
+  const handleClick = (e) => {
     e.preventDefault();
     if (mode === "push") {
       setScrollToSessionStorage();
@@ -19,7 +27,14 @@ export const Link = ({ to, className, children, mode = "push", onMouseEnter, onM
   };
 
   return (
-    <a href={to} className={className} onClick={handleClick} onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave}>
+    <a
+      href={to}
+      className={className}
+      style={style}
+      onClick={handleClick}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
+    >
       {children}
     </a>
   );
@@ -36,8 +51,10 @@ export const navigate = (to, mode = "push") => {
 };
 
 // expects a "prepared" list of routes
-export const createRouter = (routes, store) => props => {
-  const appState = store ? useContext(store) : { state: props, dispatch: false };
+export const createRouter = (routes, store) => (props) => {
+  const appState = store
+    ? useContext(store)
+    : { state: props, dispatch: false };
   const { state, dispatch } = appState;
   const location = state.location;
 
@@ -47,6 +64,9 @@ export const createRouter = (routes, store) => props => {
     handleSyncRegistered = true;
   }
 
-  const { Component } = helper.match(routes, location ? location.split("?", 1)[0] : "/");
+  const { Component } = helper.match(
+    routes,
+    location ? location.split("?", 1)[0] : "/"
+  );
   return <Component {...state} dispatch={dispatch} />;
 };
