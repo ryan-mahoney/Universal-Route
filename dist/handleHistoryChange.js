@@ -28,8 +28,8 @@ var _default = exports["default"] = function _default(dispatch) {
   }
 
   // listen for changes to the current location
-  _history["default"].listen( /*#__PURE__*/function () {
-    var _ref = (0, _asyncToGenerator2["default"])( /*#__PURE__*/_regenerator["default"].mark(function _callee(historyEvent) {
+  _history["default"].listen(/*#__PURE__*/function () {
+    var _ref = (0, _asyncToGenerator2["default"])(/*#__PURE__*/_regenerator["default"].mark(function _callee(historyEvent) {
       var location, action, check, uuid, path, CancelToken, response, data, previousScroll;
       return _regenerator["default"].wrap(function _callee$(_context) {
         while (1) switch (_context.prev = _context.next) {
