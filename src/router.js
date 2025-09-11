@@ -1,10 +1,10 @@
-import React, { useContext } from "react";
-import appHistory from "./history";
-import { setScrollToSessionStorage } from "./scroll";
-import helper from "./helper";
-import handleHistoryChange from "./handleHistoryChange";
+import React from "react";
+import appHistory from "./history.js";
+import { setScrollToSessionStorage } from "./scroll.js";
+import helper from "./helper.js";
+import handleHistoryChange from "./handleHistoryChange.js";
 
-var handleSyncRegistered = false;
+let handleSyncRegistered = false;
 
 export const Link = ({
   to,
@@ -14,15 +14,26 @@ export const Link = ({
   onMouseEnter,
   onMouseLeave,
   style = {},
+  ...rest
 }) => {
-  const handleClick = (e) => {
-    e.preventDefault();
-    if (mode === "push") {
-      setScrollToSessionStorage();
-      appHistory.push(to);
+  const onClick = (e) => {
+    if (
+      e.defaultPrevented ||
+      e.button !== 0 ||
+      e.metaKey ||
+      e.ctrlKey ||
+      e.altKey ||
+      e.shiftKey
+    ) {
+      return;
     }
+    e.preventDefault();
+    setScrollToSessionStorage();
+    if (!appHistory) return;
     if (mode === "replace") {
       appHistory.replace(to);
+    } else {
+      appHistory.push(to);
     }
   };
 
@@ -30,10 +41,11 @@ export const Link = ({
     <a
       href={to}
       className={className}
-      style={style}
-      onClick={handleClick}
+      onClick={onClick}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
+      style={style}
+      {...rest}
     >
       {children}
     </a>
@@ -41,32 +53,57 @@ export const Link = ({
 };
 
 export const navigate = (to, mode = "push") => {
-  if (mode === "push") {
-    setScrollToSessionStorage();
-    appHistory.push(to);
-  }
-  if (mode === "replace") {
-    appHistory.replace(to);
-  }
+  if (!appHistory) return;
+  if (mode === "replace") appHistory.replace(to);
+  else appHistory.push(to);
 };
 
-// expects a "prepared" list of routes
-export const createRouter = (routes, store) => (props) => {
-  const appState = store
-    ? useContext(store)
-    : { state: props, dispatch: false };
-  const { state, dispatch } = appState;
-  const location = state.location;
+export const createRouter = ({ routesMap, reducer, initialState = {} }) => {
+  const preparedRoutes = helper.prepare(routesMap);
 
-  // register the listener once
-  if (!handleSyncRegistered && dispatch) {
-    handleHistoryChange(dispatch);
-    handleSyncRegistered = true;
-  }
+  const RouterView = () => {
+    const [state, dispatch] = React.useReducer(reducer, {
+      ...initialState,
+      location:
+        (appHistory &&
+          appHistory.location.pathname + (appHistory.location.search || "")) ||
+        "/",
+    });
 
-  const { Component } = helper.match(
-    routes,
-    location ? location.split("?", 1)[0] : "/"
-  );
-  return <Component {...state} dispatch={dispatch} />;
+    React.useEffect(() => {
+      if (!appHistory) return;
+      const unlisten = appHistory.listen(({ location }) => {
+        const nextLoc = location.pathname + (location.search || "");
+        dispatch({ type: "LOCATION_CHANGED", location: nextLoc });
+      });
+      dispatch({
+        type: "LOCATION_CHANGED",
+        location:
+          appHistory.location.pathname + (appHistory.location.search || ""),
+      });
+      return () => unlisten();
+    }, []);
+
+    React.useEffect(() => {
+      if (!handleSyncRegistered && dispatch) {
+        handleHistoryChange(dispatch);
+        handleSyncRegistered = true;
+      }
+    }, [dispatch]);
+
+    const pathOnly = (state.location || "/").split("?", 1)[0];
+
+    console.log("pathOnly", pathOnly);
+
+    const { Component, params } = helper.match(preparedRoutes, pathOnly);
+
+    console.log("Component", Component);
+    console.log("params", params);
+
+    return <Component {...state} params={params} dispatch={dispatch} />;
+  };
+
+  return RouterView;
 };
+
+export default { Link, navigate, createRouter };

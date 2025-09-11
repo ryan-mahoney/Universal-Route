@@ -1,117 +1,110 @@
-import appHistory from "./history";
+import appHistory from "./history.js";
 import nprogress from "nprogress";
-import axios from "axios";
 import { v4 as uuidv4 } from "uuid";
-import { getScrollFromSessionStorage, setScrollToSessionStorage } from "./scroll";
+import { getScrollFromSessionStorage /*, setScrollToSessionStorage*/ } from "./scroll.js";
 
-// initialize a place-holder for the last request cancellation token
-let requestCancellation = false;
-let lastLocation = null;
+/**
+ * Registers a single history listener that:
+ *  - Cancels in-flight fetch on new navigation (AbortController)
+ *  - Requests JSON for the current location (accept: application/json)
+ *  - Dispatches a CHANGE_PAGE action with the response body
+ *  - Handles 404/5xx by dispatching a CHANGE_PAGE to /404 or /500
+ *  - Restores scroll on POP/REPLACE and scrolls to top on PUSH
+ *  - Updates document.title from response.data.title
+ *
+ * You can inject custom deps for testing: { history, fetchImpl, setTitle, progress }
+ */
+let inFlight = null;
+let registered = false;
 
-const endsWith = (subject, suffix) => subject.indexOf(suffix, subject.length - suffix.length) !== -1;
-
-export default (dispatch) => {
-  // handle server rendered case
-  if (!appHistory) {
-    return;
+const defaultDeps = () => ({
+  history: appHistory,
+  fetchImpl: typeof fetch !== "undefined" ? fetch.bind(window) : null,
+  setTitle: (s) => {
+    if (typeof document !== "undefined") document.title = s || "";
+  },
+  progress: {
+    start: () => nprogress.start(),
+    done: () => nprogress.done()
   }
+});
 
-  // listen for changes to the current location
-  appHistory.listen(async (historyEvent) => {
-    const { location, action } = historyEvent;
+const buildRequestUrl = (loc) => {
+  const origin =
+    typeof window !== "undefined" && window.location
+      ? window.location.origin
+      : "http://localhost";
+  const url = new URL((loc.pathname || "/") + (loc.search || ""), origin);
+  url.searchParams.set("uuid", uuidv4());
+  return url.toString();
+};
 
-    // set scroll position for replace
-    if (action == "REPLACE") {
-      setScrollToSessionStorage();
+const interpretStatus = (status) => {
+  const klass = Math.trunc(status / 100);
+  if (klass === 5) return "5xx";
+  if (status === 404) return "404";
+  return "ok";
+};
+
+export default function handleHistoryChange(dispatch, deps = defaultDeps()) {
+  const { history, fetchImpl, setTitle, progress } = deps;
+  if (registered || !history || !fetchImpl) return;
+  registered = true;
+
+  history.listen(async ({ location, action }) => {
+    if (inFlight) {
+      try {
+        inFlight.abort();
+      } catch {}
+      inFlight = null;
     }
 
-    // determine if location actually change, ignoring hash changes
-    const check = `${location.state ? `${location.state}:` : ""}${location.pathname}${
-      location.search ? `?${location.search}` : ""
-    }`;
-    if (check === lastLocation && location.hash !== "") {
-      return;
-    }
-    lastLocation = check;
+    progress.done();
+    progress.start();
 
-    // clear and start
-    nprogress.done();
-    nprogress.start();
+    const controller = new AbortController();
+    inFlight = controller;
+    const reqUrl = buildRequestUrl(location);
 
-    // decide which path to call
-    const uuid = uuidv4();
-    let path = `${location.pathname}${location.search}${location.search.indexOf("?") !== -1 ? "&" : "?"}uuid=${uuid}`;
-
-    // do XHR request
-    const CancelToken = axios.CancelToken;
-    if (requestCancellation) {
-      requestCancellation.cancel("Override a previous request");
-    }
-    requestCancellation = CancelToken.source();
-    const response = await axios
-      .get(path, {
-        cancelToken: requestCancellation.token,
-        headers: {
-          "Content-Type": "application/json",
-        },
-      })
-      .then((response) => {
-        if (endsWith(response.request.responseURL, "access-denied")) {
-          window.location.href = "/";
-        }
-        return response;
-      })
-      .catch((error) => {
-        return error.response || null;
+    let res;
+    try {
+      const r = await fetchImpl(reqUrl, {
+        method: "GET",
+        headers: { Accept: "application/json" },
+        signal: controller.signal
       });
-
-    // stop displaying progress bar
-    nprogress.done();
-
-    // if there was not response, do nothing
-    if (response === null) {
-      return;
+      const data = await r.json().catch(() => ({}));
+      res = { status: r.status, data };
+    } catch (e) {
+      res = { status: 503, data: {} };
+    } finally {
+      progress.done();
     }
 
-    // handle 500 error
-    if (response.status[0] == 5) {
-      dispatch({
-        type: "CHANGE_PAGE",
-        data: { ...response.data, location: "/500" },
-      });
-      return;
+    let effectiveLocation = location.pathname;
+    if (res?.data?.authorization?.location) {
+      effectiveLocation = res.data.authorization.location;
     }
 
-    if (response.status == 404) {
-      dispatch({
-        type: "CHANGE_PAGE",
-        data: { ...response.data, location: "/404" },
-      });
-      return;
+    const statusKind = interpretStatus(res.status);
+    if (statusKind === "5xx") {
+      dispatch({ type: "CHANGE_PAGE", data: { ...res.data, location: "/500" } });
+    } else if (statusKind === "404") {
+      dispatch({ type: "CHANGE_PAGE", data: { ...res.data, location: "/404" } });
+    } else {
+      dispatch({ type: "CHANGE_PAGE", data: { ...res.data, location: effectiveLocation } });
     }
 
-    let data = { ...response.data, location: location.pathname };
+    setTitle(res?.data?.title || "");
 
-    // handle authorization based redirection
-    if (response.data.authorization) {
-      data.location = response.data.authorization.location ? response.data.authorization.location : "/unauthorized";
-    }
-
-    // call change page action to trigger re-rendering
-    dispatch({ type: "CHANGE_PAGE", data });
-
-    // set page title
-    document.title = response.data.title ? response.data.title : "";
-
-    if (action == "PUSH") {
+    if (action === "PUSH") {
       window.scrollTo(0, 0);
     } else {
-      const previousScroll = getScrollFromSessionStorage(window.location.pathname);
-      if (previousScroll) {
-        setTimeout(() => {
-          window.scrollTo(previousScroll.x, previousScroll.y);
-        }, 250);
+      const key = (location.pathname || "/") + (location.search || "");
+      const previous = getScrollFromSessionStorage(key);
+      if (previous) {
+        setTimeout(() => window.scrollTo(previous.x || 0, previous.y || 0), 250);
       }
     }
   });
-};
+}
