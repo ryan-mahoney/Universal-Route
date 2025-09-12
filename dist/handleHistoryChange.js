@@ -1,14 +1,42 @@
 "use strict";
 
+var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefault");
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.__test__ = void 0;
 exports["default"] = handleHistoryChange;
-var _uuid = require("uuid");
+var _toConsumableArray2 = _interopRequireDefault(require("@babel/runtime/helpers/toConsumableArray"));
 var _scroll = require("./scroll.js");
-// src/handleHistoryChange.js
-
+var makeUuid = function makeUuid() {
+  // Browser / Workers
+  if (typeof globalThis !== "undefined" && globalThis.crypto) {
+    if (typeof globalThis.crypto.randomUUID === "function") {
+      return globalThis.crypto.randomUUID();
+    }
+    // RFC4122 v4 via getRandomValues
+    var buf = new Uint8Array(16);
+    globalThis.crypto.getRandomValues(buf);
+    buf[6] = buf[6] & 0x0f | 0x40;
+    buf[8] = buf[8] & 0x3f | 0x80;
+    var hex = (0, _toConsumableArray2["default"])(buf).map(function (b) {
+      return b.toString(16).padStart(2, "0");
+    });
+    return "".concat(hex.slice(0, 4).join(""), "-").concat(hex.slice(4, 6).join(""), "-").concat(hex.slice(6, 8).join(""), "-").concat(hex.slice(8, 10).join(""), "-").concat(hex.slice(10).join(""));
+  }
+  // Node
+  try {
+    var _require = require("node:crypto"),
+      randomUUID = _require.randomUUID;
+    if (typeof randomUUID === "function") return randomUUID();
+  } catch (_unused) {}
+  // Last-resort (non-crypto)
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function (c) {
+    var r = Math.random() * 16 | 0;
+    var v = c === "x" ? r : r & 0x3 | 0x8;
+    return v.toString(16);
+  });
+};
 var INSTALLED = Symbol["for"]("handleHistoryChange:installed");
 var _inFlight = null;
 function originOf() {
@@ -21,7 +49,7 @@ function originOf() {
 }
 function buildUrl(loc) {
   var url = new URL((loc.pathname || "/") + (loc.search || ""), originOf());
-  url.searchParams.set("uuid", (0, _uuid.v4)());
+  url.searchParams.set("uuid", makeUuid());
   return url.toString();
 }
 function kindFrom(status) {
