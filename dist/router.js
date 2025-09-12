@@ -56,11 +56,8 @@ var navigate = exports.navigate = function navigate(to) {
   if (!_history["default"]) return;
   if (mode === "replace") _history["default"].replace(to);else _history["default"].push(to);
 };
-var createRouter = exports.createRouter = function createRouter(_ref2) {
-  var routesMap = _ref2.routesMap,
-    reducer = _ref2.reducer,
-    _ref2$initialState = _ref2.initialState,
-    initialState = _ref2$initialState === void 0 ? {} : _ref2$initialState;
+var createRouter = exports.createRouter = function createRouter(routesMap, reducer) {
+  var initialState = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
   var preparedRoutes = _helper["default"].prepare(routesMap);
   var RouterView = function RouterView() {
     var _React$useReducer = _react["default"].useReducer(reducer, _objectSpread(_objectSpread({}, initialState), {}, {
@@ -71,8 +68,8 @@ var createRouter = exports.createRouter = function createRouter(_ref2) {
       dispatch = _React$useReducer2[1];
     _react["default"].useEffect(function () {
       if (!_history["default"]) return;
-      var unlisten = _history["default"].listen(function (_ref3) {
-        var location = _ref3.location;
+      var unlisten = _history["default"].listen(function (_ref2) {
+        var location = _ref2.location;
         var nextLoc = location.pathname + (location.search || "");
         dispatch({
           type: "LOCATION_CHANGED",

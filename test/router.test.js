@@ -109,11 +109,7 @@ describe("router.js", () => {
   });
 
   test("RouterView renders matched component and passes params", () => {
-    const RouterView = createRouter({
-      routesMap: routes,
-      reducer,
-      initialState: {},
-    });
+    const RouterView = createRouter(routes, reducer, {});
     const { rerender } = render(<RouterView />);
     expect(screen.getByText(/Home/)).toBeInTheDocument();
 
@@ -126,11 +122,7 @@ describe("router.js", () => {
   });
 
   test("RouterView falls back to 404 when unmatched", () => {
-    const RouterView = createRouter({
-      routesMap: routes,
-      reducer,
-      initialState: {},
-    });
+    const RouterView = createRouter(routes, reducer, {});
     const { rerender } = render(<RouterView />);
     act(() => {
       appHistory.push("/nope");

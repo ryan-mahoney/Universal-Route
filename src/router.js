@@ -58,7 +58,7 @@ export const navigate = (to, mode = "push") => {
   else appHistory.push(to);
 };
 
-export const createRouter = ({ routesMap, reducer, initialState = {} }) => {
+export const createRouter = (routesMap, reducer, initialState = {}) => {
   const preparedRoutes = helper.prepare(routesMap);
 
   const RouterView = () => {

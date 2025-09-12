@@ -9,7 +9,7 @@ import { createRouter } from "../src/index.js";
 import routesMap from "./routes.js";
 import reducer, { initialState } from "./reducer.js";
 
-const AppRouter = createRouter({ routesMap, reducer, initialState });
+const AppRouter = createRouter(routesMap, reducer, initialState);
 
 const root = createRoot(document.getElementById("root"));
 root.render(<AppRouter />);
