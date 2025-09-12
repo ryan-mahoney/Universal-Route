@@ -1,149 +1,145 @@
 "use strict";
 
-var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefault");
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports["default"] = void 0;
-var _regenerator = _interopRequireDefault(require("@babel/runtime/regenerator"));
-var _defineProperty2 = _interopRequireDefault(require("@babel/runtime/helpers/defineProperty"));
-var _asyncToGenerator2 = _interopRequireDefault(require("@babel/runtime/helpers/asyncToGenerator"));
-var _history = _interopRequireDefault(require("./history"));
-var _nprogress = _interopRequireDefault(require("nprogress"));
-var _axios = _interopRequireDefault(require("axios"));
+exports.__test__ = void 0;
+exports["default"] = handleHistoryChange;
 var _uuid = require("uuid");
-var _scroll = require("./scroll");
-function ownKeys(e, r) { var t = Object.keys(e); if (Object.getOwnPropertySymbols) { var o = Object.getOwnPropertySymbols(e); r && (o = o.filter(function (r) { return Object.getOwnPropertyDescriptor(e, r).enumerable; })), t.push.apply(t, o); } return t; }
-function _objectSpread(e) { for (var r = 1; r < arguments.length; r++) { var t = null != arguments[r] ? arguments[r] : {}; r % 2 ? ownKeys(Object(t), !0).forEach(function (r) { (0, _defineProperty2["default"])(e, r, t[r]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t)) : ownKeys(Object(t)).forEach(function (r) { Object.defineProperty(e, r, Object.getOwnPropertyDescriptor(t, r)); }); } return e; }
-// initialize a place-holder for the last request cancellation token
-var requestCancellation = false;
-var lastLocation = null;
-var endsWith = function endsWith(subject, suffix) {
-  return subject.indexOf(suffix, subject.length - suffix.length) !== -1;
-};
-var _default = exports["default"] = function _default(dispatch) {
-  // handle server rendered case
-  if (!_history["default"]) {
+var _scroll = require("./scroll.js");
+// src/handleHistoryChange.js
+
+var INSTALLED = Symbol["for"]("handleHistoryChange:installed");
+var _inFlight = null;
+function originOf() {
+  try {
+    if (typeof window !== "undefined" && window.location && window.location.origin) {
+      return window.location.origin;
+    }
+  } catch (e) {}
+  return "http://localhost";
+}
+function buildUrl(loc) {
+  var url = new URL((loc.pathname || "/") + (loc.search || ""), originOf());
+  url.searchParams.set("uuid", (0, _uuid.v4)());
+  return url.toString();
+}
+function kindFrom(status) {
+  if (status === 404) return "404";
+  if (Math.floor(status / 100) === 5) return "5xx";
+  return "ok";
+}
+function handleHistoryChange(dispatch) {
+  var _ref = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {},
+    history = _ref.history,
+    _ref$fetchImpl = _ref.fetchImpl,
+    fetchImpl = _ref$fetchImpl === void 0 ? typeof fetch !== "undefined" && fetch || null : _ref$fetchImpl,
+    _ref$setTitle = _ref.setTitle,
+    setTitle = _ref$setTitle === void 0 ? function (t) {
+      if (typeof document !== "undefined" && t) document.title = t;
+    } : _ref$setTitle,
+    _ref$progress = _ref.progress,
+    progress = _ref$progress === void 0 ? {
+      start: function start() {},
+      done: function done() {}
+    } : _ref$progress;
+  if (!history || !fetchImpl) {
     return;
   }
+  if (history[INSTALLED]) {
+    return;
+  }
+  history[INSTALLED] = true;
+  history.listen(function (_ref2) {
+    var location = _ref2.location,
+      action = _ref2.action;
+    // Abort prior request
+    if (_inFlight && typeof _inFlight.abort === "function") {
+      try {
+        _inFlight.abort();
+      } catch (e) {}
+    }
+    _inFlight = typeof AbortController !== "undefined" ? new AbortController() : null;
+    if (progress && typeof progress.done === "function") progress.done();
+    if (progress && typeof progress.start === "function") progress.start();
+    var url = buildUrl(location);
 
-  // listen for changes to the current location
-  _history["default"].listen(/*#__PURE__*/function () {
-    var _ref = (0, _asyncToGenerator2["default"])(/*#__PURE__*/_regenerator["default"].mark(function _callee(historyEvent) {
-      var location, action, check, uuid, path, CancelToken, response, data, previousScroll;
-      return _regenerator["default"].wrap(function _callee$(_context) {
-        while (1) switch (_context.prev = _context.next) {
-          case 0:
-            location = historyEvent.location, action = historyEvent.action; // set scroll position for replace
-            if (action == "REPLACE") {
-              (0, _scroll.setScrollToSessionStorage)();
-            }
+    // Single promise chain so one microtask drain should be enough in tests
+    Promise.resolve(fetchImpl(url, {
+      method: "GET",
+      headers: {
+        Accept: "application/json"
+      },
+      signal: _inFlight ? _inFlight.signal : undefined
+    })).then(function (res) {
+      var jp = res && res.json ? res.json() : {};
+      return Promise.resolve(jp).then(function (data) {
+        return {
+          status: res ? res.status : 503,
+          data: data || {}
+        };
+      })["catch"](function () {
+        return {
+          status: res ? res.status : 503,
+          data: {}
+        };
+      });
+    })["catch"](function (err) {
+      return {
+        status: 503,
+        data: {}
+      };
+    }).then(function (_ref3) {
+      var status = _ref3.status,
+        data = _ref3.data;
+      if (progress && typeof progress.done === "function") progress.done();
 
-            // determine if location actually change, ignoring hash changes
-            check = "".concat(location.state ? "".concat(location.state, ":") : "").concat(location.pathname).concat(location.search ? "?".concat(location.search) : "");
-            if (!(check === lastLocation && location.hash !== "")) {
-              _context.next = 5;
-              break;
-            }
-            return _context.abrupt("return");
-          case 5:
-            lastLocation = check;
+      // Authorization redirect wins
+      var authLoc = data && data.authorization && data.authorization.location;
+      var finalLoc = authLoc || location.pathname || "/";
 
-            // clear and start
-            _nprogress["default"].done();
-            _nprogress["default"].start();
+      // Map 404/5xx if no explicit auth redirect
+      if (!authLoc) {
+        var k = kindFrom(status);
+        if (k === "404") finalLoc = "/404";else if (k === "5xx") finalLoc = "/500";
+      }
+      dispatch({
+        type: "CHANGE_PAGE",
+        data: Object.assign({}, data, {
+          location: finalLoc
+        })
+      });
 
-            // decide which path to call
-            uuid = (0, _uuid.v4)();
-            path = "".concat(location.pathname).concat(location.search).concat(location.search.indexOf("?") !== -1 ? "&" : "?", "uuid=").concat(uuid); // do XHR request
-            CancelToken = _axios["default"].CancelToken;
-            if (requestCancellation) {
-              requestCancellation.cancel("Override a previous request");
-            }
-            requestCancellation = CancelToken.source();
-            _context.next = 15;
-            return _axios["default"].get(path, {
-              cancelToken: requestCancellation.token,
-              headers: {
-                "Content-Type": "application/json"
-              }
-            }).then(function (response) {
-              if (endsWith(response.request.responseURL, "access-denied")) {
-                window.location.href = "/";
-              }
-              return response;
-            })["catch"](function (error) {
-              return error.response || null;
-            });
-          case 15:
-            response = _context.sent;
-            // stop displaying progress bar
-            _nprogress["default"].done();
+      // Title from top-level data.title
+      if (data && data.title) {
+        // eslint-disable-next-line no-console
+        setTitle(data.title);
+      }
 
-            // if there was not response, do nothing
-            if (!(response === null)) {
-              _context.next = 19;
-              break;
-            }
-            return _context.abrupt("return");
-          case 19:
-            if (!(response.status[0] == 5)) {
-              _context.next = 22;
-              break;
-            }
-            dispatch({
-              type: "CHANGE_PAGE",
-              data: _objectSpread(_objectSpread({}, response.data), {}, {
-                location: "/500"
-              })
-            });
-            return _context.abrupt("return");
-          case 22:
-            if (!(response.status == 404)) {
-              _context.next = 25;
-              break;
-            }
-            dispatch({
-              type: "CHANGE_PAGE",
-              data: _objectSpread(_objectSpread({}, response.data), {}, {
-                location: "/404"
-              })
-            });
-            return _context.abrupt("return");
-          case 25:
-            data = _objectSpread(_objectSpread({}, response.data), {}, {
-              location: location.pathname
-            }); // handle authorization based redirection
-            if (response.data.authorization) {
-              data.location = response.data.authorization.location ? response.data.authorization.location : "/unauthorized";
-            }
-
-            // call change page action to trigger re-rendering
-            dispatch({
-              type: "CHANGE_PAGE",
-              data: data
-            });
-
-            // set page title
-            document.title = response.data.title ? response.data.title : "";
-            if (action == "PUSH") {
-              window.scrollTo(0, 0);
-            } else {
-              previousScroll = (0, _scroll.getScrollFromSessionStorage)(window.location.pathname);
-              if (previousScroll) {
-                setTimeout(function () {
-                  window.scrollTo(previousScroll.x, previousScroll.y);
-                }, 250);
-              }
-            }
-          case 30:
-          case "end":
-            return _context.stop();
+      // Scroll behavior: top on PUSH; restore for POP/REPLACE
+      if (typeof window !== "undefined" && window.scrollTo) {
+        if (action === "PUSH") {
+          window.scrollTo(0, 0);
+        } else {
+          var key = (location.pathname || "/") + (location.search || "");
+          var prev = (0, _scroll.getScrollFromSessionStorage)(key);
+          if (prev) {
+            setTimeout(function () {
+              window.scrollTo(prev.x || 0, prev.y || 0);
+            }, 250);
+          }
         }
-      }, _callee);
-    }));
-    return function (_x) {
-      return _ref.apply(this, arguments);
+      }
+    });
+  });
+}
+
+// Test helpers (reset does nothing now because the guard is per-history instance)
+var __test__ = exports.__test__ = {
+  reset: function reset() {},
+  state: function state() {
+    return {
+      inFlight: !!_inFlight
     };
-  }());
+  }
 };

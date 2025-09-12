@@ -1,47 +1,45 @@
 import React from "react";
-import { pathToRegexp } from "path-to-regexp";
-
-const match = (routes, location) =>
-  routes.reduce((acc, route) => (acc ? acc : route.re.exec(location) ? route : false), false);
+import { match } from "./pathToRegex.js";
 
 const Generic404 = () => (
-  <div>
+  <div style={{ padding: 24 }}>
     <h1>404</h1>
     <p>Page not found</p>
   </div>
 );
 
+const matchOne = (preparedRoutes, location) => {
+  for (const r of preparedRoutes) {
+    const res = r.matcher(location);
+    if (res) {
+      return { route: r, params: res.params || {} };
+    }
+  }
+  return null;
+};
+
 export default {
-  match: (routes, location) => {
-    let route = match(routes, location);
-    if (!route) {
-      route = match(routes, "/404");
-    }
-    if (!route) {
-      route = { Component: Generic404 };
-    }
-    return route;
+  match: (preparedRoutes, location) => {
+    const m = matchOne(preparedRoutes, location);
+    if (!m) return { Component: Generic404, reducerKey: null, params: {} };
+    const { route, params } = m;
+    const { Component, reducerKey } = route;
+    return { Component, reducerKey, params };
   },
-
-  prepare: routes =>
-    Object.keys(routes).map(route => {
-      const routeKeys = [];
-      const re = pathToRegexp(route, routeKeys);
-      let component, reducer;
-
-      // handle a case where we want to be able to filter props by reducer key later
-      if (Object.prototype.toString.call(routes[route]) === "[object Array]") {
-        component = routes[route][0];
-        reducer = routes[route][1];
+  prepare: (routesMap) =>
+    Object.keys(routesMap).map((path) => {
+      const defn = routesMap[path];
+      let component, reducerKey;
+      if (Array.isArray(defn)) {
+        [component, reducerKey] = defn;
       } else {
-        component = routes[route];
+        component = defn;
       }
-
       return {
-        re: re,
-        keys: routeKeys,
+        path,
+        matcher: match(path, { decode: decodeURIComponent }),
         Component: component,
-        reducerKey: reducer
+        reducerKey: reducerKey || null,
       };
-    })
+    }),
 };

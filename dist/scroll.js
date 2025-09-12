@@ -1,29 +1,53 @@
 "use strict";
 
-var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefault");
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.setScrollToSessionStorage = exports.getScrollPosition = exports.getScrollFromSessionStorage = void 0;
-var _defineProperty2 = _interopRequireDefault(require("@babel/runtime/helpers/defineProperty"));
+exports.setScrollToSessionStorage = exports.setScrollForKey = exports.getScrollPosition = exports.getScrollFromSessionStorage = void 0;
+// Centralized scroll helpers with query-aware keys
+var SCROLL_KEY = "scroll";
 var getScrollPosition = exports.getScrollPosition = function getScrollPosition() {
   return {
-    y: window.pageYOffset || document.documentElement.scrollTop,
-    x: window.pageXOffset || document.documentElement.scrollLeft
+    y: window.pageYOffset || document.documentElement.scrollTop || 0,
+    x: window.pageXOffset || document.documentElement.scrollLeft || 0
   };
 };
-var setScrollToSessionStorage = exports.setScrollToSessionStorage = function setScrollToSessionStorage() {
-  return typeof sessionStorage === "undefined" ? "{}" : sessionStorage.setItem("scroll", JSON.stringify(Object.assign({}, getScrollFromSessionStorage("*") || {}, (0, _defineProperty2["default"])({}, window.location.pathname, getScrollPosition()))));
+var currentKey = function currentKey() {
+  var _window$location = window.location,
+    pathname = _window$location.pathname,
+    search = _window$location.search;
+  return "".concat(pathname).concat(search || "");
 };
-var getScrollFromSessionStorage = exports.getScrollFromSessionStorage = function getScrollFromSessionStorage(url) {
-  if (typeof sessionStorage === "undefined") return null;
-  var blob = sessionStorage.getItem("scroll");
-  if (!blob) {
-    return null;
+var readStore = function readStore() {
+  if (typeof sessionStorage === "undefined") return {};
+  try {
+    var blob = sessionStorage.getItem(SCROLL_KEY);
+    return blob ? JSON.parse(blob) : {};
+  } catch (_unused) {
+    return {};
   }
-  var data = JSON.parse(blob);
-  if (url == "*") {
-    return data;
+};
+var writeStore = function writeStore(obj) {
+  if (typeof sessionStorage === "undefined") return;
+  try {
+    sessionStorage.setItem(SCROLL_KEY, JSON.stringify(obj));
+  } catch (_unused2) {
+    /* ignore quota/security errors */
   }
-  return data[url] || null;
+};
+var setScrollToSessionStorage = exports.setScrollToSessionStorage = function setScrollToSessionStorage() {
+  var store = readStore();
+  store[currentKey()] = getScrollPosition();
+  writeStore(store);
+};
+var setScrollForKey = exports.setScrollForKey = function setScrollForKey(key, pos) {
+  var store = readStore();
+  store[key] = pos || getScrollPosition();
+  writeStore(store);
+};
+var getScrollFromSessionStorage = exports.getScrollFromSessionStorage = function getScrollFromSessionStorage() {
+  var key = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "*";
+  var store = readStore();
+  if (key === "*") return store;
+  return store[key] || null;
 };

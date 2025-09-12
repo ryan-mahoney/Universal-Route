@@ -1,117 +1,141 @@
-import appHistory from "./history";
-import nprogress from "nprogress";
-import axios from "axios";
+// src/handleHistoryChange.js
 import { v4 as uuidv4 } from "uuid";
-import { getScrollFromSessionStorage, setScrollToSessionStorage } from "./scroll";
+import { getScrollFromSessionStorage } from "./scroll.js";
 
-// initialize a place-holder for the last request cancellation token
-let requestCancellation = false;
-let lastLocation = null;
+const INSTALLED = Symbol.for("handleHistoryChange:installed");
+let _inFlight = null;
 
-const endsWith = (subject, suffix) => subject.indexOf(suffix, subject.length - suffix.length) !== -1;
+function originOf() {
+  try {
+    if (
+      typeof window !== "undefined" &&
+      window.location &&
+      window.location.origin
+    ) {
+      return window.location.origin;
+    }
+  } catch (e) {}
+  return "http://localhost";
+}
 
-export default (dispatch) => {
-  // handle server rendered case
-  if (!appHistory) {
+function buildUrl(loc) {
+  const url = new URL((loc.pathname || "/") + (loc.search || ""), originOf());
+  url.searchParams.set("uuid", uuidv4());
+  return url.toString();
+}
+
+function kindFrom(status) {
+  if (status === 404) return "404";
+  if (Math.floor(status / 100) === 5) return "5xx";
+  return "ok";
+}
+
+export default function handleHistoryChange(
+  dispatch,
+  {
+    history,
+    fetchImpl = (typeof fetch !== "undefined" && fetch) || null,
+    setTitle = function (t) {
+      if (typeof document !== "undefined" && t) document.title = t;
+    },
+    progress = { start() {}, done() {} }, // optional in tests
+  } = {}
+) {
+  if (!history || !fetchImpl) {
     return;
   }
 
-  // listen for changes to the current location
-  appHistory.listen(async (historyEvent) => {
-    const { location, action } = historyEvent;
+  if (history[INSTALLED]) {
+    return;
+  }
+  history[INSTALLED] = true;
 
-    // set scroll position for replace
-    if (action == "REPLACE") {
-      setScrollToSessionStorage();
+  history.listen(function ({ location, action }) {
+    // Abort prior request
+    if (_inFlight && typeof _inFlight.abort === "function") {
+      try {
+        _inFlight.abort();
+      } catch (e) {}
     }
+    _inFlight =
+      typeof AbortController !== "undefined" ? new AbortController() : null;
 
-    // determine if location actually change, ignoring hash changes
-    const check = `${location.state ? `${location.state}:` : ""}${location.pathname}${
-      location.search ? `?${location.search}` : ""
-    }`;
-    if (check === lastLocation && location.hash !== "") {
-      return;
-    }
-    lastLocation = check;
+    if (progress && typeof progress.done === "function") progress.done();
+    if (progress && typeof progress.start === "function") progress.start();
 
-    // clear and start
-    nprogress.done();
-    nprogress.start();
+    const url = buildUrl(location);
 
-    // decide which path to call
-    const uuid = uuidv4();
-    let path = `${location.pathname}${location.search}${location.search.indexOf("?") !== -1 ? "&" : "?"}uuid=${uuid}`;
-
-    // do XHR request
-    const CancelToken = axios.CancelToken;
-    if (requestCancellation) {
-      requestCancellation.cancel("Override a previous request");
-    }
-    requestCancellation = CancelToken.source();
-    const response = await axios
-      .get(path, {
-        cancelToken: requestCancellation.token,
-        headers: {
-          "Content-Type": "application/json",
-        },
+    // Single promise chain so one microtask drain should be enough in tests
+    Promise.resolve(
+      fetchImpl(url, {
+        method: "GET",
+        headers: { Accept: "application/json" },
+        signal: _inFlight ? _inFlight.signal : undefined,
       })
-      .then((response) => {
-        if (endsWith(response.request.responseURL, "access-denied")) {
-          window.location.href = "/";
+    )
+      .then(function (res) {
+        const jp = res && res.json ? res.json() : {};
+        return Promise.resolve(jp)
+          .then(function (data) {
+            return { status: res ? res.status : 503, data: data || {} };
+          })
+          .catch(function () {
+            return { status: res ? res.status : 503, data: {} };
+          });
+      })
+      .catch(function (err) {
+        return { status: 503, data: {} };
+      })
+      .then(function ({ status, data }) {
+        if (progress && typeof progress.done === "function") progress.done();
+
+        // Authorization redirect wins
+        const authLoc =
+          data && data.authorization && data.authorization.location;
+        let finalLoc = authLoc || location.pathname || "/";
+
+        // Map 404/5xx if no explicit auth redirect
+        if (!authLoc) {
+          const k = kindFrom(status);
+          if (k === "404") finalLoc = "/404";
+          else if (k === "5xx") finalLoc = "/500";
         }
-        return response;
-      })
-      .catch((error) => {
-        return error.response || null;
+
+        dispatch({
+          type: "CHANGE_PAGE",
+          data: Object.assign({}, data, { location: finalLoc }),
+        });
+
+        // Title from top-level data.title
+        if (data && data.title) {
+          // eslint-disable-next-line no-console
+          setTitle(data.title);
+        }
+
+        // Scroll behavior: top on PUSH; restore for POP/REPLACE
+        if (typeof window !== "undefined" && window.scrollTo) {
+          if (action === "PUSH") {
+            window.scrollTo(0, 0);
+          } else {
+            const key = (location.pathname || "/") + (location.search || "");
+            const prev = getScrollFromSessionStorage(key);
+            if (prev) {
+              setTimeout(function () {
+                window.scrollTo(prev.x || 0, prev.y || 0);
+              }, 250);
+            }
+          }
+        }
       });
-
-    // stop displaying progress bar
-    nprogress.done();
-
-    // if there was not response, do nothing
-    if (response === null) {
-      return;
-    }
-
-    // handle 500 error
-    if (response.status[0] == 5) {
-      dispatch({
-        type: "CHANGE_PAGE",
-        data: { ...response.data, location: "/500" },
-      });
-      return;
-    }
-
-    if (response.status == 404) {
-      dispatch({
-        type: "CHANGE_PAGE",
-        data: { ...response.data, location: "/404" },
-      });
-      return;
-    }
-
-    let data = { ...response.data, location: location.pathname };
-
-    // handle authorization based redirection
-    if (response.data.authorization) {
-      data.location = response.data.authorization.location ? response.data.authorization.location : "/unauthorized";
-    }
-
-    // call change page action to trigger re-rendering
-    dispatch({ type: "CHANGE_PAGE", data });
-
-    // set page title
-    document.title = response.data.title ? response.data.title : "";
-
-    if (action == "PUSH") {
-      window.scrollTo(0, 0);
-    } else {
-      const previousScroll = getScrollFromSessionStorage(window.location.pathname);
-      if (previousScroll) {
-        setTimeout(() => {
-          window.scrollTo(previousScroll.x, previousScroll.y);
-        }, 250);
-      }
-    }
   });
+}
+
+// Test helpers (reset does nothing now because the guard is per-history instance)
+export const __test__ = {
+  reset: function () {},
+  state: function () {
+    return {
+      inFlight: !!_inFlight,
+    };
+  },
 };

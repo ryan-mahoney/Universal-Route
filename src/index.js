@@ -1,11 +1,3 @@
-import { Link, navigate, createRouter } from "./router";
-import { appHistory } from "./history";
-import helper from "./helper";
-
-module.exports = {
-  Link,
-  navigate,
-  createRouter,
-  appHistory,
-  routesHelper: helper
-};
+export { Link, navigate, createRouter } from "./router.js";
+export { appHistory, makeMemoryHistory } from "./history.js";
+export { default as routesHelper } from "./helper.js";
