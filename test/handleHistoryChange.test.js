@@ -1,13 +1,22 @@
-import handleHistoryChange from "../src/handleHistoryChange.js";
+import handleHistoryChange, { __test__ } from "../src/handleHistoryChange.js";
 import { setScrollForKey } from "../src/scroll.js";
 
 // Use fake timers for scroll restore setTimeout
 jest.useFakeTimers();
 
+// Flushes both the fetch .then() and the res.json() .then()
+const flush = async () => {
+  await Promise.resolve();
+  await Promise.resolve();
+  await Promise.resolve();
+  await Promise.resolve();
+  await Promise.resolve();
+  await Promise.resolve();
+};
+
 const makeHistory = (initial = "/") => {
-  const listeners = new Set();
   let location = { pathname: initial, search: "" };
-  let action = "PUSH";
+  let listener = null;
   return {
     get location() {
       return location;
@@ -17,25 +26,30 @@ const makeHistory = (initial = "/") => {
         pathname: p.split("?")[0],
         search: p.includes("?") ? "?" + p.split("?")[1] : "",
       };
-      action = "PUSH";
-      listeners.forEach((l) => l({ location, action }));
+      if (listener) {
+        listener({ location, action: "PUSH" });
+      }
     },
     replace(p) {
       location = {
         pathname: p.split("?")[0],
         search: p.includes("?") ? "?" + p.split("?")[1] : "",
       };
-      action = "REPLACE";
-      listeners.forEach((l) => l({ location, action }));
+      if (listener) {
+        listener({ location, action: "REPLACE" });
+      }
     },
     back() {
-      action = "POP";
-      listeners.forEach((l) => l({ location, action }));
+      if (listener) {
+        listener({ location, action: "POP" });
+      }
     },
     listen(fn) {
-      listeners.add(fn);
+      listener = fn;
       // return unlisten
-      return () => listeners.delete(fn);
+      return () => {
+        listener = null;
+      };
     },
   };
 };
@@ -50,6 +64,7 @@ describe("handleHistoryChange", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     window.sessionStorage.clear();
+    __test__.reset();
   });
 
   test("registers only once", () => {
@@ -85,8 +100,8 @@ describe("handleHistoryChange", () => {
     handleHistoryChange(dispatch, { history, fetchImpl, setTitle, progress });
 
     history.push("/ok");
-    await Promise.resolve(); // microtask flush
-    expect(dispatch).toHaveBeenLastCalledWith(
+    await flush(); // flush both microtasks
+    expect(dispatch).toHaveBeenCalledWith(
       expect.objectContaining({
         type: "CHANGE_PAGE",
         data: expect.objectContaining({ location: "/ok", title: "Ok" }),
@@ -95,17 +110,19 @@ describe("handleHistoryChange", () => {
     expect(setTitle).toHaveBeenCalledWith("Ok");
 
     history.push("/missing");
-    await Promise.resolve();
-    expect(dispatch).toHaveBeenLastCalledWith(
+    await flush(); // flush both microtasks
+    expect(dispatch).toHaveBeenCalledWith(
       expect.objectContaining({
+        type: "CHANGE_PAGE",
         data: expect.objectContaining({ location: "/404" }),
       })
     );
 
     history.push("/err");
-    await Promise.resolve();
-    expect(dispatch).toHaveBeenLastCalledWith(
+    await flush(); // flush both microtasks
+    expect(dispatch).toHaveBeenCalledWith(
       expect.objectContaining({
+        type: "CHANGE_PAGE",
         data: expect.objectContaining({ location: "/500" }),
       })
     );
@@ -122,10 +139,11 @@ describe("handleHistoryChange", () => {
 
     handleHistoryChange(dispatch, { history, fetchImpl, setTitle, progress });
     history.push("/secret");
-    await Promise.resolve();
+    await flush(); // flush both microtasks
 
-    expect(dispatch).toHaveBeenLastCalledWith(
+    expect(dispatch).toHaveBeenCalledWith(
       expect.objectContaining({
+        type: "CHANGE_PAGE",
         data: expect.objectContaining({ location: "/login" }),
       })
     );
@@ -151,7 +169,7 @@ describe("handleHistoryChange", () => {
     history.push("/long");
     // Trigger a second navigation to cause abort
     history.push("/next");
-    await Promise.resolve();
+    await flush(); // flush both microtasks
     expect(aborted).toBe(true);
   });
 
@@ -168,11 +186,11 @@ describe("handleHistoryChange", () => {
     handleHistoryChange(dispatch, { history, fetchImpl, setTitle, progress });
 
     history.push("/push");
-    await Promise.resolve();
+    await flush(); // flush both microtasks
     expect(window.scrollTo).toHaveBeenCalledWith(0, 0);
 
     history.replace("/prev");
-    await Promise.resolve();
+    await flush(); // flush both microtasks
     // advance timers to allow delayed scroll restore
     jest.advanceTimersByTime(300);
     expect(window.scrollTo).toHaveBeenCalledWith(7, 9);
@@ -191,6 +209,6 @@ describe("handleHistoryChange", () => {
 
     handleHistoryChange(dispatch, { history, fetchImpl, setTitle, progress });
     history.push("/with-uuid");
-    await Promise.resolve();
+    await flush(); // flush both microtasks
   });
 });

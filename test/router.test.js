@@ -4,7 +4,7 @@
  * We also mock handleHistoryChange to avoid network side effects.
  */
 import React from "react";
-import { render, screen } from "@testing-library/react";
+import { render, screen, act } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 // Mock history.js to a single shared memory history
@@ -19,12 +19,6 @@ jest.mock("../src/history.js", () => {
       createMemoryHistory({ initialEntries: entries }),
   };
 });
-
-// Spy on scroll storage
-// const setScrollSpy = jest.fn();
-// jest.mock("../scroll.js", () => ({
-//   setScrollToSessionStorage: (...args) => setScrollSpy(...args),
-// }));
 
 // Mock scroll module (no out-of-scope refs in the factory)
 jest.mock("../src/scroll.js", () => {
@@ -69,7 +63,7 @@ describe("router.js", () => {
   beforeEach(() => {
     // reset to root
     appHistory.push("/");
-    setScrollSpy.mockClear();
+    mockSetScrollToSessionStorage.mockClear();
   });
 
   test("<Link/> prevents default and navigates with push, sets scroll", async () => {
@@ -88,7 +82,7 @@ describe("router.js", () => {
     Object.defineProperty(e, "preventDefault", { value: prevent });
     a.dispatchEvent(e);
 
-    expect(setScrollSpy).toHaveBeenCalled();
+    expect(mockSetScrollToSessionStorage).toHaveBeenCalled();
     expect(appHistory.location.pathname).toBe("/user/42");
   });
 
@@ -124,7 +118,9 @@ describe("router.js", () => {
     expect(screen.getByText(/Home/)).toBeInTheDocument();
 
     // navigate
-    appHistory.push("/user/99?x=1");
+    act(() => {
+      appHistory.push("/user/99?x=1");
+    });
     rerender(<RouterView />);
     expect(screen.getByText("User:99")).toBeInTheDocument();
   });
@@ -136,7 +132,9 @@ describe("router.js", () => {
       initialState: {},
     });
     const { rerender } = render(<RouterView />);
-    appHistory.push("/nope");
+    act(() => {
+      appHistory.push("/nope");
+    });
     rerender(<RouterView />);
     expect(screen.getByText("404")).toBeInTheDocument();
   });

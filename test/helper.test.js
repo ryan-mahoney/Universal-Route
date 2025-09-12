@@ -1,4 +1,6 @@
 import routesHelper from "../src/helper.js";
+import React from "react";
+import { render, screen } from "@testing-library/react";
 
 const Dummy = () => null;
 
@@ -40,9 +42,6 @@ describe("helper.js", () => {
     const { Component } = routesHelper.match(prepared, "/nope");
     // We can't import Generic404 directly; assert it renders expected text.
     // Render and check for the "404" text.
-    // Lazy import React + testing-library to avoid failing if not installed.
-    const React = require("react");
-    const { render, screen } = require("@testing-library/react");
     render(React.createElement(Component));
     expect(screen.getByText("404")).toBeInTheDocument();
   });

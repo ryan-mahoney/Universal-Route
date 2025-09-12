@@ -32,7 +32,7 @@ if (!("sessionStorage" in window)) {
   });
 }
 
-// // Default URL for JSDOM (mirrors jest.config.cjs testEnvironmentOptions.url)
+// Default URL for JSDOM (mirrors jest.config.cjs testEnvironmentOptions.url)
 // Object.defineProperty(window, "location", {
 //   value: new URL("http://localhost/"),
 //   writable: true,

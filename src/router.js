@@ -93,12 +93,7 @@ export const createRouter = ({ routesMap, reducer, initialState = {} }) => {
 
     const pathOnly = (state.location || "/").split("?", 1)[0];
 
-    console.log("pathOnly", pathOnly);
-
     const { Component, params } = helper.match(preparedRoutes, pathOnly);
-
-    console.log("Component", Component);
-    console.log("params", params);
 
     return <Component {...state} params={params} dispatch={dispatch} />;
   };
