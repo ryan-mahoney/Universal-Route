@@ -4,8 +4,7 @@
   "type": "module",
   "scripts": {
     "dev": "concurrently -k \"esbuild app.js --bundle --loader:.js=jsx --format=esm --external:react --external:react-dom --external:react-dom/client --outfile=dist/bundle.js --sourcemap --watch\" \"serve .\"",
-    "build": "esbuild app.js --bundle --loader:.js=jsx --format=esm --external:react --external:react-dom --external:react-dom/client --outfile=dist/bundle.js --minify",
-    "preview": "serve ."
+    "build": "esbuild app.js --bundle --loader:.js=jsx --format=esm --external:react --external:react-dom --external:react-dom/client --outfile=dist/bundle.js --minify"
   },
   "dependencies": {
     "history": "^5.3.0",

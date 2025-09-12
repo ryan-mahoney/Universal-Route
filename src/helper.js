@@ -1,5 +1,5 @@
 import React from "react";
-import { match } from "path-to-regexp";
+import { match } from "./pathToRegex.js";
 
 const Generic404 = () => (
   <div style={{ padding: 24 }}>
@@ -39,7 +39,7 @@ export default {
         path,
         matcher: match(path, { decode: decodeURIComponent }),
         Component: component,
-        reducerKey: reducerKey || null
+        reducerKey: reducerKey || null,
       };
-    })
+    }),
 };
