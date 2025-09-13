@@ -30,11 +30,7 @@ export const Link = ({
     e.preventDefault();
     setScrollToSessionStorage();
     if (!appHistory) return;
-    if (mode === "replace") {
-      appHistory.replace(to);
-    } else {
-      appHistory.push(to);
-    }
+    mode === "replace" ? appHistory.replace(to) : appHistory.push(to);
   };
 
   return (
@@ -54,83 +50,67 @@ export const Link = ({
 
 export const navigate = (to, mode = "push") => {
   if (!appHistory) return;
-  if (mode === "replace") appHistory.replace(to);
-  else appHistory.push(to);
+  mode === "replace" ? appHistory.replace(to) : appHistory.push(to);
 };
 
-/**
- * API: createRouter(routes, storeContext) => RouterComponent
- * A store is REQUIRED. There is no store-less mode.
- */
-export const createRouter = (routes, store) => {
-  if (!store) {
-    throw new Error(
-      "createRouter(routes, store): a store/context is required. Wrap your app with a Provider that supplies {state, dispatch}."
-    );
+// createRouter(routes, store?) => (props) => <Component/>
+export const createRouter = (routes, store) => (props) => {
+  // prepare routes once
+  const preparedRoutesRef = React.useRef(null);
+  if (!preparedRoutesRef.current) {
+    preparedRoutesRef.current = helper.prepare(routes);
   }
 
-  const Router = () => {
-    // Prepare routes once
-    const preparedRoutesRef = React.useRef(null);
-    if (!preparedRoutesRef.current) {
-      preparedRoutesRef.current = helper.prepare(routes);
+  // store is OPTIONAL: fall back to props when absent
+  const appState = store
+    ? React.useContext(store)
+    : { state: props || {}, dispatch: false };
+
+  const { state = {}, dispatch = false } = appState || {};
+
+  // Only wire effects when we actually have a dispatch function
+  React.useEffect(() => {
+    if (!(dispatch && typeof dispatch === "function") || !appHistory) return;
+
+    const sync = ({ location }) => {
+      const nextLoc = location.pathname + (location.search || "");
+      dispatch({ type: "LOCATION_CHANGED", location: nextLoc });
+    };
+    const unlisten = appHistory.listen(sync);
+
+    // initial sync
+    dispatch({
+      type: "LOCATION_CHANGED",
+      location:
+        appHistory.location.pathname + (appHistory.location.search || ""),
+    });
+
+    return () => unlisten();
+  }, [dispatch]);
+
+  React.useEffect(() => {
+    if (!handleSyncRegistered && dispatch && typeof dispatch === "function") {
+      handleHistoryChange(dispatch);
+      handleSyncRegistered = true;
     }
+  }, [dispatch]);
 
-    // Pull state/dispatch from required store
-    const appState = React.useContext(store);
-    if (
-      !appState ||
-      typeof appState !== "object" ||
-      !("state" in appState) ||
-      typeof appState.dispatch !== "function"
-    ) {
-      throw new Error(
-        "Router: expected context value {state, dispatch}. Ensure your <StateProvider> supplies both."
-      );
-    }
+  // Derive current location from state; otherwise history; otherwise props; otherwise "/"
+  const currentLocation =
+    state.location ||
+    (appHistory &&
+      appHistory.location &&
+      appHistory.location.pathname + (appHistory.location.search || "")) ||
+    (props && props.location) ||
+    "/";
 
-    const { state, dispatch } = appState;
+  const pathOnly = String(currentLocation).split("?", 1)[0];
+  const { Component, params } = helper.match(
+    preparedRoutesRef.current,
+    pathOnly
+  );
 
-    // Sync history -> store
-    React.useEffect(() => {
-      if (!dispatch || !appHistory) return;
-
-      const unlisten = appHistory.listen(({ location }) => {
-        const nextLoc = location.pathname + (location.search || "");
-        dispatch({ type: "LOCATION_CHANGED", location: nextLoc });
-      });
-
-      // initial sync (hydrate if state.location is missing or stale)
-      dispatch({
-        type: "LOCATION_CHANGED",
-        location:
-          appHistory.location.pathname + (appHistory.location.search || ""),
-      });
-
-      return () => unlisten();
-    }, [dispatch]);
-
-    // Register network/side-effect sync once (per app shell)
-    React.useEffect(() => {
-      if (!handleSyncRegistered && dispatch) {
-        handleHistoryChange(dispatch);
-        handleSyncRegistered = true;
-      }
-    }, [dispatch]);
-
-    // Location is sourced ONLY from store
-    const currentLocation = state.location || "/";
-    const pathOnly = currentLocation.split("?", 1)[0];
-
-    const { Component, params } = helper.match(
-      preparedRoutesRef.current,
-      pathOnly
-    );
-
-    return <Component {...state} params={params} dispatch={dispatch} />;
-  };
-
-  return Router;
+  return <Component {...state} params={params} dispatch={dispatch} />;
 };
 
 export default { Link, navigate, createRouter };

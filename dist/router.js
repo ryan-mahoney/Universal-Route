@@ -5,7 +5,6 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.navigate = exports["default"] = exports.createRouter = exports.Link = void 0;
-var _typeof2 = _interopRequireDefault(require("@babel/runtime/helpers/typeof"));
 var _extends2 = _interopRequireDefault(require("@babel/runtime/helpers/extends"));
 var _objectWithoutProperties2 = _interopRequireDefault(require("@babel/runtime/helpers/objectWithoutProperties"));
 var _react = _interopRequireDefault(require("react"));
@@ -33,11 +32,7 @@ var Link = exports.Link = function Link(_ref) {
     e.preventDefault();
     (0, _scroll.setScrollToSessionStorage)();
     if (!_history["default"]) return;
-    if (mode === "replace") {
-      _history["default"].replace(to);
-    } else {
-      _history["default"].push(to);
-    }
+    mode === "replace" ? _history["default"].replace(to) : _history["default"].push(to);
   };
   return /*#__PURE__*/_react["default"].createElement("a", (0, _extends2["default"])({
     href: to,
@@ -51,45 +46,43 @@ var Link = exports.Link = function Link(_ref) {
 var navigate = exports.navigate = function navigate(to) {
   var mode = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : "push";
   if (!_history["default"]) return;
-  if (mode === "replace") _history["default"].replace(to);else _history["default"].push(to);
+  mode === "replace" ? _history["default"].replace(to) : _history["default"].push(to);
 };
 
-/**
- * API: createRouter(routes, storeContext) => RouterComponent
- * A store is REQUIRED. There is no store-less mode.
- */
+// createRouter(routes, store?) => (props) => <Component/>
 var createRouter = exports.createRouter = function createRouter(routes, store) {
-  if (!store) {
-    throw new Error("createRouter(routes, store): a store/context is required. Wrap your app with a Provider that supplies {state, dispatch}.");
-  }
-  var Router = function Router() {
-    // Prepare routes once
+  return function (props) {
+    // prepare routes once
     var preparedRoutesRef = _react["default"].useRef(null);
     if (!preparedRoutesRef.current) {
       preparedRoutesRef.current = _helper["default"].prepare(routes);
     }
 
-    // Pull state/dispatch from required store
-    var appState = _react["default"].useContext(store);
-    if (!appState || (0, _typeof2["default"])(appState) !== "object" || !("state" in appState) || typeof appState.dispatch !== "function") {
-      throw new Error("Router: expected context value {state, dispatch}. Ensure your <StateProvider> supplies both.");
-    }
-    var state = appState.state,
-      dispatch = appState.dispatch;
+    // store is OPTIONAL: fall back to props when absent
+    var appState = store ? _react["default"].useContext(store) : {
+      state: props || {},
+      dispatch: false
+    };
+    var _ref2 = appState || {},
+      _ref2$state = _ref2.state,
+      state = _ref2$state === void 0 ? {} : _ref2$state,
+      _ref2$dispatch = _ref2.dispatch,
+      dispatch = _ref2$dispatch === void 0 ? false : _ref2$dispatch;
 
-    // Sync history -> store
+    // Only wire effects when we actually have a dispatch function
     _react["default"].useEffect(function () {
-      if (!dispatch || !_history["default"]) return;
-      var unlisten = _history["default"].listen(function (_ref2) {
-        var location = _ref2.location;
+      if (!(dispatch && typeof dispatch === "function") || !_history["default"]) return;
+      var sync = function sync(_ref3) {
+        var location = _ref3.location;
         var nextLoc = location.pathname + (location.search || "");
         dispatch({
           type: "LOCATION_CHANGED",
           location: nextLoc
         });
-      });
+      };
+      var unlisten = _history["default"].listen(sync);
 
-      // initial sync (hydrate if state.location is missing or stale)
+      // initial sync
       dispatch({
         type: "LOCATION_CHANGED",
         location: _history["default"].location.pathname + (_history["default"].location.search || "")
@@ -98,18 +91,16 @@ var createRouter = exports.createRouter = function createRouter(routes, store) {
         return unlisten();
       };
     }, [dispatch]);
-
-    // Register network/side-effect sync once (per app shell)
     _react["default"].useEffect(function () {
-      if (!handleSyncRegistered && dispatch) {
+      if (!handleSyncRegistered && dispatch && typeof dispatch === "function") {
         (0, _handleHistoryChange["default"])(dispatch);
         handleSyncRegistered = true;
       }
     }, [dispatch]);
 
-    // Location is sourced ONLY from store
-    var currentLocation = state.location || "/";
-    var pathOnly = currentLocation.split("?", 1)[0];
+    // Derive current location from state; otherwise history; otherwise props; otherwise "/"
+    var currentLocation = state.location || _history["default"] && _history["default"].location && _history["default"].location.pathname + (_history["default"].location.search || "") || props && props.location || "/";
+    var pathOnly = String(currentLocation).split("?", 1)[0];
     var _helper$match = _helper["default"].match(preparedRoutesRef.current, pathOnly),
       Component = _helper$match.Component,
       params = _helper$match.params;
@@ -118,7 +109,6 @@ var createRouter = exports.createRouter = function createRouter(routes, store) {
       dispatch: dispatch
     }));
   };
-  return Router;
 };
 var _default = exports["default"] = {
   Link: Link,

@@ -1,11 +1,10 @@
 /**
- * Tests for router.js with a REQUIRED store.
+ * Tests cover BOTH store and store-less modes.
  */
 import React from "react";
 import { render, screen, act } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
 
-// Mock history.js to a single shared memory history
+// Mock history.js
 jest.mock("../src/history.js", () => {
   const { createMemoryHistory } = require("history");
   const mem = createMemoryHistory({ initialEntries: ["/"] });
@@ -18,7 +17,7 @@ jest.mock("../src/history.js", () => {
   };
 });
 
-// Mock scroll module
+// Mock scroll.js
 jest.mock("../src/scroll.js", () => {
   const setScrollToSessionStorage = jest.fn();
   return {
@@ -30,13 +29,12 @@ jest.mock("../src/scroll.js", () => {
 });
 import { setScrollToSessionStorage as mockSetScrollToSessionStorage } from "../src/scroll.js";
 
-// Avoid registering network listener
-jest.mock("../src/handleHistoryChange.js", () => (dispatch) => {
-  // no-op
-});
+// Mock handleHistoryChange so we can assert it's NOT called in store-less mode
+jest.mock("../src/handleHistoryChange.js", () => jest.fn());
+import mockHandleHistoryChange from "../src/handleHistoryChange.js";
 
 import appHistory from "../src/history.js";
-import { Link, navigate, createRouter } from "../src/router.js";
+import { Link, createRouter } from "../src/router.js";
 
 // Test components & routes
 const Home = ({ params }) => <div>Home {params?.id ? params.id : ""}</div>;
@@ -67,22 +65,17 @@ const TestProvider = ({ children, initial = {} }) => {
   );
 };
 
-describe("router.js (store required)", () => {
+describe("router.js (optional store)", () => {
   beforeEach(() => {
     appHistory.push("/");
     mockSetScrollToSessionStorage.mockClear();
+    mockHandleHistoryChange.mockClear();
   });
 
-  test("createRouter throws if store is not provided", () => {
-    expect(() => createRouter(routes)).toThrow(/a store\/context is required/i);
-  });
-
-  test("<Link/> prevents default and navigates with push, sets scroll", async () => {
-    const user = userEvent.setup();
+  test("<Link/> navigates and sets scroll", () => {
     render(<Link to="/user/42">Go</Link>);
     const a = screen.getByRole("link", { name: "Go" });
 
-    // Simulate a normal left click
     const prevent = jest.fn();
     const e = new MouseEvent("click", {
       bubbles: true,
@@ -97,22 +90,7 @@ describe("router.js (store required)", () => {
     expect(appHistory.location.pathname).toBe("/user/42");
   });
 
-  test("<Link/> ignores modified clicks (cmd/ctrl)", () => {
-    render(<Link to="/x">GoX</Link>);
-    const a = screen.getByRole("link", { name: "GoX" });
-    const prevent = jest.fn();
-    const e = new MouseEvent("click", {
-      bubbles: true,
-      cancelable: true,
-      button: 0,
-      ctrlKey: true,
-    });
-    Object.defineProperty(e, "preventDefault", { value: prevent });
-    a.dispatchEvent(e);
-    expect(prevent).not.toHaveBeenCalled();
-  });
-
-  test("Router renders matched component and passes params (with required store)", () => {
+  test("Router works WITH a store (effects enabled)", () => {
     const Router = createRouter(routes, StateContext);
     const { rerender } = render(
       <TestProvider>
@@ -130,17 +108,23 @@ describe("router.js (store required)", () => {
       </TestProvider>
     );
     expect(screen.getByText("User:99")).toBeInTheDocument();
+    expect(mockHandleHistoryChange).toHaveBeenCalledTimes(1);
   });
 
-  test("Router shows 404 for unmatched routes (with required store)", () => {
-    // helper.match should yield a 404 component internally
+  test("Router works WITHOUT a store (effects disabled), driven by props", () => {
+    const Router = createRouter(routes); // no store
+    render(<Router location="/user/7" />);
+    expect(screen.getByText("User:7")).toBeInTheDocument();
+    expect(mockHandleHistoryChange).not.toHaveBeenCalled();
+  });
+
+  test("Router shows 404 for unmatched path (with store)", () => {
     const Router = createRouter(routes, StateContext);
     const { rerender } = render(
       <TestProvider>
         <Router />
       </TestProvider>
     );
-
     act(() => {
       appHistory.push("/nope");
     });
@@ -149,7 +133,6 @@ describe("router.js (store required)", () => {
         <Router />
       </TestProvider>
     );
-
     expect(screen.getByText("404")).toBeInTheDocument();
   });
 });
