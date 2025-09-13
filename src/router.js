@@ -58,32 +58,59 @@ export const navigate = (to, mode = "push") => {
   else appHistory.push(to);
 };
 
-export const createRouter = (routesMap, reducer, initialState = {}) => {
-  const preparedRoutes = helper.prepare(routesMap);
+/**
+ * API: createRouter(routes, storeContext) => RouterComponent
+ * A store is REQUIRED. There is no store-less mode.
+ */
+export const createRouter = (routes, store) => {
+  if (!store) {
+    throw new Error(
+      "createRouter(routes, store): a store/context is required. Wrap your app with a Provider that supplies {state, dispatch}."
+    );
+  }
 
-  const RouterView = () => {
-    const [state, dispatch] = React.useReducer(reducer, {
-      ...initialState,
-      location:
-        (appHistory &&
-          appHistory.location.pathname + (appHistory.location.search || "")) ||
-        "/",
-    });
+  const Router = () => {
+    // Prepare routes once
+    const preparedRoutesRef = React.useRef(null);
+    if (!preparedRoutesRef.current) {
+      preparedRoutesRef.current = helper.prepare(routes);
+    }
 
+    // Pull state/dispatch from required store
+    const appState = React.useContext(store);
+    if (
+      !appState ||
+      typeof appState !== "object" ||
+      !("state" in appState) ||
+      typeof appState.dispatch !== "function"
+    ) {
+      throw new Error(
+        "Router: expected context value {state, dispatch}. Ensure your <StateProvider> supplies both."
+      );
+    }
+
+    const { state, dispatch } = appState;
+
+    // Sync history -> store
     React.useEffect(() => {
-      if (!appHistory) return;
+      if (!dispatch || !appHistory) return;
+
       const unlisten = appHistory.listen(({ location }) => {
         const nextLoc = location.pathname + (location.search || "");
         dispatch({ type: "LOCATION_CHANGED", location: nextLoc });
       });
+
+      // initial sync (hydrate if state.location is missing or stale)
       dispatch({
         type: "LOCATION_CHANGED",
         location:
           appHistory.location.pathname + (appHistory.location.search || ""),
       });
-      return () => unlisten();
-    }, []);
 
+      return () => unlisten();
+    }, [dispatch]);
+
+    // Register network/side-effect sync once (per app shell)
     React.useEffect(() => {
       if (!handleSyncRegistered && dispatch) {
         handleHistoryChange(dispatch);
@@ -91,14 +118,19 @@ export const createRouter = (routesMap, reducer, initialState = {}) => {
       }
     }, [dispatch]);
 
-    const pathOnly = (state.location || "/").split("?", 1)[0];
+    // Location is sourced ONLY from store
+    const currentLocation = state.location || "/";
+    const pathOnly = currentLocation.split("?", 1)[0];
 
-    const { Component, params } = helper.match(preparedRoutes, pathOnly);
+    const { Component, params } = helper.match(
+      preparedRoutesRef.current,
+      pathOnly
+    );
 
     return <Component {...state} params={params} dispatch={dispatch} />;
   };
 
-  return RouterView;
+  return Router;
 };
 
 export default { Link, navigate, createRouter };

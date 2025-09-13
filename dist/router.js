@@ -5,8 +5,7 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.navigate = exports["default"] = exports.createRouter = exports.Link = void 0;
-var _defineProperty2 = _interopRequireDefault(require("@babel/runtime/helpers/defineProperty"));
-var _slicedToArray2 = _interopRequireDefault(require("@babel/runtime/helpers/slicedToArray"));
+var _typeof2 = _interopRequireDefault(require("@babel/runtime/helpers/typeof"));
 var _extends2 = _interopRequireDefault(require("@babel/runtime/helpers/extends"));
 var _objectWithoutProperties2 = _interopRequireDefault(require("@babel/runtime/helpers/objectWithoutProperties"));
 var _react = _interopRequireDefault(require("react"));
@@ -15,8 +14,6 @@ var _scroll = require("./scroll.js");
 var _helper = _interopRequireDefault(require("./helper.js"));
 var _handleHistoryChange = _interopRequireDefault(require("./handleHistoryChange.js"));
 var _excluded = ["to", "className", "children", "mode", "onMouseEnter", "onMouseLeave", "style"];
-function ownKeys(e, r) { var t = Object.keys(e); if (Object.getOwnPropertySymbols) { var o = Object.getOwnPropertySymbols(e); r && (o = o.filter(function (r) { return Object.getOwnPropertyDescriptor(e, r).enumerable; })), t.push.apply(t, o); } return t; }
-function _objectSpread(e) { for (var r = 1; r < arguments.length; r++) { var t = null != arguments[r] ? arguments[r] : {}; r % 2 ? ownKeys(Object(t), !0).forEach(function (r) { (0, _defineProperty2["default"])(e, r, t[r]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t)) : ownKeys(Object(t)).forEach(function (r) { Object.defineProperty(e, r, Object.getOwnPropertyDescriptor(t, r)); }); } return e; }
 var handleSyncRegistered = false;
 var Link = exports.Link = function Link(_ref) {
   var to = _ref.to,
@@ -56,18 +53,33 @@ var navigate = exports.navigate = function navigate(to) {
   if (!_history["default"]) return;
   if (mode === "replace") _history["default"].replace(to);else _history["default"].push(to);
 };
-var createRouter = exports.createRouter = function createRouter(routesMap, reducer) {
-  var initialState = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
-  var preparedRoutes = _helper["default"].prepare(routesMap);
-  var RouterView = function RouterView() {
-    var _React$useReducer = _react["default"].useReducer(reducer, _objectSpread(_objectSpread({}, initialState), {}, {
-        location: _history["default"] && _history["default"].location.pathname + (_history["default"].location.search || "") || "/"
-      })),
-      _React$useReducer2 = (0, _slicedToArray2["default"])(_React$useReducer, 2),
-      state = _React$useReducer2[0],
-      dispatch = _React$useReducer2[1];
+
+/**
+ * API: createRouter(routes, storeContext) => RouterComponent
+ * A store is REQUIRED. There is no store-less mode.
+ */
+var createRouter = exports.createRouter = function createRouter(routes, store) {
+  if (!store) {
+    throw new Error("createRouter(routes, store): a store/context is required. Wrap your app with a Provider that supplies {state, dispatch}.");
+  }
+  var Router = function Router() {
+    // Prepare routes once
+    var preparedRoutesRef = _react["default"].useRef(null);
+    if (!preparedRoutesRef.current) {
+      preparedRoutesRef.current = _helper["default"].prepare(routes);
+    }
+
+    // Pull state/dispatch from required store
+    var appState = _react["default"].useContext(store);
+    if (!appState || (0, _typeof2["default"])(appState) !== "object" || !("state" in appState) || typeof appState.dispatch !== "function") {
+      throw new Error("Router: expected context value {state, dispatch}. Ensure your <StateProvider> supplies both.");
+    }
+    var state = appState.state,
+      dispatch = appState.dispatch;
+
+    // Sync history -> store
     _react["default"].useEffect(function () {
-      if (!_history["default"]) return;
+      if (!dispatch || !_history["default"]) return;
       var unlisten = _history["default"].listen(function (_ref2) {
         var location = _ref2.location;
         var nextLoc = location.pathname + (location.search || "");
@@ -76,6 +88,8 @@ var createRouter = exports.createRouter = function createRouter(routesMap, reduc
           location: nextLoc
         });
       });
+
+      // initial sync (hydrate if state.location is missing or stale)
       dispatch({
         type: "LOCATION_CHANGED",
         location: _history["default"].location.pathname + (_history["default"].location.search || "")
@@ -83,15 +97,20 @@ var createRouter = exports.createRouter = function createRouter(routesMap, reduc
       return function () {
         return unlisten();
       };
-    }, []);
+    }, [dispatch]);
+
+    // Register network/side-effect sync once (per app shell)
     _react["default"].useEffect(function () {
       if (!handleSyncRegistered && dispatch) {
         (0, _handleHistoryChange["default"])(dispatch);
         handleSyncRegistered = true;
       }
     }, [dispatch]);
-    var pathOnly = (state.location || "/").split("?", 1)[0];
-    var _helper$match = _helper["default"].match(preparedRoutes, pathOnly),
+
+    // Location is sourced ONLY from store
+    var currentLocation = state.location || "/";
+    var pathOnly = currentLocation.split("?", 1)[0];
+    var _helper$match = _helper["default"].match(preparedRoutesRef.current, pathOnly),
       Component = _helper$match.Component,
       params = _helper$match.params;
     return /*#__PURE__*/_react["default"].createElement(Component, (0, _extends2["default"])({}, state, {
@@ -99,7 +118,7 @@ var createRouter = exports.createRouter = function createRouter(routesMap, reduc
       dispatch: dispatch
     }));
   };
-  return RouterView;
+  return Router;
 };
 var _default = exports["default"] = {
   Link: Link,

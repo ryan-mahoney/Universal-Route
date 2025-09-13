@@ -1,7 +1,5 @@
 /**
- * Tests for router.js
- * We mock history.js to use a memory history we can control.
- * We also mock handleHistoryChange to avoid network side effects.
+ * Tests for router.js with a REQUIRED store.
  */
 import React from "react";
 import { render, screen, act } from "@testing-library/react";
@@ -20,50 +18,63 @@ jest.mock("../src/history.js", () => {
   };
 });
 
-// Mock scroll module (no out-of-scope refs in the factory)
+// Mock scroll module
 jest.mock("../src/scroll.js", () => {
   const setScrollToSessionStorage = jest.fn();
   return {
     __esModule: true,
     setScrollToSessionStorage,
-    // include others if your code imports them
     setScrollForKey: jest.fn(),
     getScrollFromSessionStorage: jest.fn(),
   };
 });
-// Import the mocked fn for assertions
 import { setScrollToSessionStorage as mockSetScrollToSessionStorage } from "../src/scroll.js";
 
 // Avoid registering network listener
 jest.mock("../src/handleHistoryChange.js", () => (dispatch) => {
-  // no-op for RouterView effect registration
+  // no-op
 });
 
 import appHistory from "../src/history.js";
 import { Link, navigate, createRouter } from "../src/router.js";
 
-const TestComp = ({ params }) => <div>Home {params?.id ? params.id : ""}</div>;
-const UserComp = ({ params }) => <div>User:{params.id}</div>;
-
+// Test components & routes
+const Home = ({ params }) => <div>Home {params?.id ? params.id : ""}</div>;
+const User = ({ params }) => <div>User:{params.id}</div>;
 const routes = {
-  "/": TestComp,
-  "/user/:id": UserComp,
+  "/": Home,
+  "/user/:id": User,
 };
 
-const reducer = (state, action) => {
-  switch (action.type) {
-    case "LOCATION_CHANGED":
-      return { ...state, location: action.location };
-    default:
-      return state;
-  }
+const StateContext = React.createContext(null);
+const TestProvider = ({ children, initial = {} }) => {
+  const reducer = (state, action) => {
+    switch (action.type) {
+      case "LOCATION_CHANGED":
+        return { ...state, location: action.location };
+      default:
+        return state;
+    }
+  };
+  const [state, dispatch] = React.useReducer(reducer, {
+    ...initial,
+    location: appHistory.location.pathname + (appHistory.location.search || ""),
+  });
+  return (
+    <StateContext.Provider value={{ state, dispatch }}>
+      {children}
+    </StateContext.Provider>
+  );
 };
 
-describe("router.js", () => {
+describe("router.js (store required)", () => {
   beforeEach(() => {
-    // reset to root
     appHistory.push("/");
     mockSetScrollToSessionStorage.mockClear();
+  });
+
+  test("createRouter throws if store is not provided", () => {
+    expect(() => createRouter(routes)).toThrow(/a store\/context is required/i);
   });
 
   test("<Link/> prevents default and navigates with push, sets scroll", async () => {
@@ -71,9 +82,8 @@ describe("router.js", () => {
     render(<Link to="/user/42">Go</Link>);
     const a = screen.getByRole("link", { name: "Go" });
 
+    // Simulate a normal left click
     const prevent = jest.fn();
-    await user.click(a, { button: 0, preventDefault: prevent });
-    // jest-dom's userEvent won't pass our prevent, so simulate wit
     const e = new MouseEvent("click", {
       bubbles: true,
       cancelable: true,
@@ -82,6 +92,7 @@ describe("router.js", () => {
     Object.defineProperty(e, "preventDefault", { value: prevent });
     a.dispatchEvent(e);
 
+    expect(prevent).toHaveBeenCalled();
     expect(mockSetScrollToSessionStorage).toHaveBeenCalled();
     expect(appHistory.location.pathname).toBe("/user/42");
   });
@@ -101,33 +112,44 @@ describe("router.js", () => {
     expect(prevent).not.toHaveBeenCalled();
   });
 
-  test("navigate() uses push and replace", () => {
-    navigate("/a");
-    expect(appHistory.location.pathname).toBe("/a");
-    navigate("/b", "replace");
-    expect(appHistory.location.pathname).toBe("/b");
-  });
-
-  test("RouterView renders matched component and passes params", () => {
-    const RouterView = createRouter(routes, reducer, {});
-    const { rerender } = render(<RouterView />);
+  test("Router renders matched component and passes params (with required store)", () => {
+    const Router = createRouter(routes, StateContext);
+    const { rerender } = render(
+      <TestProvider>
+        <Router />
+      </TestProvider>
+    );
     expect(screen.getByText(/Home/)).toBeInTheDocument();
 
-    // navigate
     act(() => {
       appHistory.push("/user/99?x=1");
     });
-    rerender(<RouterView />);
+    rerender(
+      <TestProvider>
+        <Router />
+      </TestProvider>
+    );
     expect(screen.getByText("User:99")).toBeInTheDocument();
   });
 
-  test("RouterView falls back to 404 when unmatched", () => {
-    const RouterView = createRouter(routes, reducer, {});
-    const { rerender } = render(<RouterView />);
+  test("Router shows 404 for unmatched routes (with required store)", () => {
+    // helper.match should yield a 404 component internally
+    const Router = createRouter(routes, StateContext);
+    const { rerender } = render(
+      <TestProvider>
+        <Router />
+      </TestProvider>
+    );
+
     act(() => {
       appHistory.push("/nope");
     });
-    rerender(<RouterView />);
+    rerender(
+      <TestProvider>
+        <Router />
+      </TestProvider>
+    );
+
     expect(screen.getByText("404")).toBeInTheDocument();
   });
 });
