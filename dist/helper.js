@@ -58,6 +58,9 @@ var _default = exports["default"] = {
     };
   },
   prepare: function prepare(routesMap) {
+    if (Array.isArray(routesMap)) {
+      return routesMap;
+    }
     return Object.keys(routesMap).map(function (path) {
       var defn = routesMap[path];
       var component, reducerKey;

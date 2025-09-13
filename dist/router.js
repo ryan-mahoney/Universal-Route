@@ -11,6 +11,7 @@ var _extends2 = _interopRequireDefault(require("@babel/runtime/helpers/extends")
 var _objectWithoutProperties2 = _interopRequireDefault(require("@babel/runtime/helpers/objectWithoutProperties"));
 var _react = _interopRequireWildcard(require("react"));
 var _history = _interopRequireDefault(require("./history.js"));
+var _helper = _interopRequireDefault(require("./helper.js"));
 var _excluded = ["to", "replace", "state", "onClick"];
 function _interopRequireWildcard(e, t) { if ("function" == typeof WeakMap) var r = new WeakMap(), n = new WeakMap(); return (_interopRequireWildcard = function _interopRequireWildcard(e, t) { if (!t && e && e.__esModule) return e; var o, i, f = { __proto__: null, "default": e }; if (null === e || "object" != _typeof(e) && "function" != typeof e) return f; if (o = t ? n : r) { if (o.has(e)) return o.get(e); o.set(e, f); } for (var _t in e) "default" !== _t && {}.hasOwnProperty.call(e, _t) && ((i = (o = Object.defineProperty) && Object.getOwnPropertyDescriptor(e, _t)) && (i.get || i.set) ? o(f, _t, i) : f[_t] = e[_t]); return f; })(e, t); }
 /** Programmatic navigation helper */
@@ -75,6 +76,7 @@ var createRouter = exports.createRouter = function createRouter(routes, storeCon
     var _ref3 = appState || {},
       state = _ref3.state,
       dispatch = _ref3.dispatch;
+    routes = _helper["default"].prepare(routes);
     var currentFromHistory = ((_history["default"] === null || _history["default"] === void 0 || (_history$location = _history["default"].location) === null || _history$location === void 0 ? void 0 : _history$location.pathname) || "") + ((_history["default"] === null || _history["default"] === void 0 || (_history$location2 = _history["default"].location) === null || _history$location2 === void 0 ? void 0 : _history$location2.search) || "");
     var initialLocation = state && state.location || currentFromHistory;
 
@@ -114,10 +116,10 @@ var createRouter = exports.createRouter = function createRouter(routes, storeCon
     var matched = (0, _react.useMemo)(function () {
       return matchRoute(routes, activePathname);
     }, [routes, activePathname]);
-    var Element = (matched === null || matched === void 0 ? void 0 : matched.element) || function () {
+    var Component = (matched === null || matched === void 0 ? void 0 : matched.Component) || function () {
       return null;
     };
-    return /*#__PURE__*/_react["default"].createElement(Element, null);
+    return /*#__PURE__*/_react["default"].createElement(Component, null);
   };
 };
 var _default = exports["default"] = createRouter;

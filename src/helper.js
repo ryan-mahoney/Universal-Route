@@ -26,8 +26,12 @@ export default {
     const { Component, reducerKey } = route;
     return { Component, reducerKey, params };
   },
-  prepare: (routesMap) =>
-    Object.keys(routesMap).map((path) => {
+  prepare: (routesMap) => {
+    if (Array.isArray(routesMap)) {
+      return routesMap;
+    }
+
+    return Object.keys(routesMap).map((path) => {
       const defn = routesMap[path];
       let component, reducerKey;
       if (Array.isArray(defn)) {
@@ -41,5 +45,6 @@ export default {
         Component: component,
         reducerKey: reducerKey || null,
       };
-    }),
+    });
+  },
 };

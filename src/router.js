@@ -1,5 +1,6 @@
 import React, { useContext, useEffect, useMemo, useRef, useState } from "react";
 import history from "./history.js";
+import helper from "./helper.js";
 
 /** Programmatic navigation helper */
 export const navigate = (to, { replace = false, state } = {}) => {
@@ -37,6 +38,7 @@ export const Link = ({ to, replace = false, state, onClick, ...rest }) => {
 /** Simple exact-path matcher with optional "*" catch-all. */
 const matchRoute = (routes, pathname) => {
   const exact = routes.find((r) => r.path === pathname);
+
   if (exact) return exact;
   return routes.find((r) => r.path === "*") || null;
 };
@@ -55,6 +57,8 @@ export const createRouter = (routes, storeContext) => (props) => {
     : { state: props, dispatch: false };
 
   const { state, dispatch } = appState || {};
+
+  routes = helper.prepare(routes);
 
   const currentFromHistory =
     (history?.location?.pathname || "") + (history?.location?.search || "");
@@ -96,8 +100,8 @@ export const createRouter = (routes, storeContext) => (props) => {
     [routes, activePathname]
   );
 
-  const Element = matched?.element || (() => null);
-  return <Element />;
+  const Component = matched?.Component || (() => null);
+  return <Component />;
 };
 
 export default createRouter;
