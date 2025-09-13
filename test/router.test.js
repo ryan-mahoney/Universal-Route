@@ -1,138 +1,172 @@
-/**
- * Tests cover BOTH store and store-less modes.
- */
-import React from "react";
-import { render, screen, act } from "@testing-library/react";
+import React, { act } from "react";
+import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 
-// Mock history.js
+import { createRouter, Link } from "../src/router.js";
+
+// ---- Mock a real-ish shared memory history ----
 jest.mock("../src/history.js", () => {
-  const { createMemoryHistory } = require("history");
-  const mem = createMemoryHistory({ initialEntries: ["/"] });
-  return {
-    __esModule: true,
-    default: mem,
-    appHistory: mem,
-    makeMemoryHistory: (entries = ["/"]) =>
-      createMemoryHistory({ initialEntries: entries }),
-  };
-});
+  let listeners = [];
 
-// Mock scroll.js
-jest.mock("../src/scroll.js", () => {
-  const setScrollToSessionStorage = jest.fn();
-  return {
-    __esModule: true,
-    setScrollToSessionStorage,
-    setScrollForKey: jest.fn(),
-    getScrollFromSessionStorage: jest.fn(),
-  };
-});
-import { setScrollToSessionStorage as mockSetScrollToSessionStorage } from "../src/scroll.js";
-
-// Mock handleHistoryChange so we can assert it's NOT called in store-less mode
-jest.mock("../src/handleHistoryChange.js", () => jest.fn());
-import mockHandleHistoryChange from "../src/handleHistoryChange.js";
-
-import appHistory from "../src/history.js";
-import { Link, createRouter } from "../src/router.js";
-
-// Test components & routes
-const Home = ({ params }) => <div>Home {params?.id ? params.id : ""}</div>;
-const User = ({ params }) => <div>User:{params.id}</div>;
-const routes = {
-  "/": Home,
-  "/user/:id": User,
-};
-
-const StateContext = React.createContext(null);
-const TestProvider = ({ children, initial = {} }) => {
-  const reducer = (state, action) => {
-    switch (action.type) {
-      case "LOCATION_CHANGED":
-        return { ...state, location: action.location };
-      default:
-        return state;
+  const parsePath = (path, prev) => {
+    if (typeof path === "string") {
+      const [pathname, q = ""] = path.split("?");
+      return { pathname, search: q ? `?${q}` : "" };
     }
+    if (path && typeof path === "object") {
+      return {
+        pathname: path.pathname || prev.pathname || "/",
+        search: path.search || "",
+      };
+    }
+    return prev || { pathname: "/", search: "" };
   };
-  const [state, dispatch] = React.useReducer(reducer, {
-    ...initial,
-    location: appHistory.location.pathname + (appHistory.location.search || ""),
-  });
-  return (
-    <StateContext.Provider value={{ state, dispatch }}>
-      {children}
-    </StateContext.Provider>
-  );
-};
 
-describe("router.js (optional store)", () => {
-  beforeEach(() => {
-    appHistory.push("/");
-    mockSetScrollToSessionStorage.mockClear();
-    mockHandleHistoryChange.mockClear();
-  });
+  const history = {
+    location: { pathname: "/a", search: "" },
+    push(path, state) {
+      history.location = parsePath(path, history.location);
+      const payload = { location: history.location, action: "PUSH", state };
+      listeners.forEach((fn) => fn(payload));
+    },
+    replace(path, state) {
+      history.location = parsePath(path, history.location);
+      const payload = { location: history.location, action: "REPLACE", state };
+      listeners.forEach((fn) => fn(payload));
+    },
+    listen(fn) {
+      listeners.push(fn);
+      return () => {
+        listeners = listeners.filter((x) => x !== fn);
+      };
+    },
+  };
 
-  test("<Link/> navigates and sets scroll", () => {
-    render(<Link to="/user/42">Go</Link>);
-    const a = screen.getByRole("link", { name: "Go" });
+  return { __esModule: true, default: history };
+});
 
-    const prevent = jest.fn();
-    const e = new MouseEvent("click", {
-      bubbles: true,
-      cancelable: true,
-      button: 0,
-    });
-    Object.defineProperty(e, "preventDefault", { value: prevent });
-    a.dispatchEvent(e);
+// Re-import after mock so we get the mocked default
+// eslint-disable-next-line import/first
+import mockedHistory from "../src/history.js";
 
-    expect(prevent).toHaveBeenCalled();
-    expect(mockSetScrollToSessionStorage).toHaveBeenCalled();
-    expect(appHistory.location.pathname).toBe("/user/42");
-  });
+// Test pages
+const PageA = () => (
+  <div>
+    <h1>Page A</h1>
+    <Link to="/b" data-testid="goto-b">
+      go b
+    </Link>
+  </div>
+);
+const PageB = () => <h1>Page B</h1>;
+const NotFound = () => <h1>Not Found</h1>;
 
-  test("Router works WITH a store (effects enabled)", () => {
+const routes = [
+  { path: "/a", element: PageA },
+  { path: "/b", element: PageB },
+  { path: "*", element: NotFound },
+];
+
+// Minimal StateContext matching the router’s expectations
+const StateContext = React.createContext({
+  state: { location: "/a" },
+  dispatch: () => {},
+});
+
+describe("Router", () => {
+  test("does NOT dispatch on initial mount (store already hydrated)", () => {
+    const dispatch = jest.fn();
+    const value = { state: { location: "/a" }, dispatch };
+
     const Router = createRouter(routes, StateContext);
-    const { rerender } = render(
-      <TestProvider>
-        <Router />
-      </TestProvider>
-    );
-    expect(screen.getByText(/Home/)).toBeInTheDocument();
 
-    act(() => {
-      appHistory.push("/user/99?x=1");
-    });
-    rerender(
-      <TestProvider>
+    render(
+      <StateContext.Provider value={value}>
         <Router />
-      </TestProvider>
+      </StateContext.Provider>
     );
-    expect(screen.getByText("User:99")).toBeInTheDocument();
-    expect(mockHandleHistoryChange).toHaveBeenCalledTimes(1);
+
+    expect(screen.getByText("Page A")).toBeInTheDocument();
+    expect(dispatch).not.toHaveBeenCalled();
   });
 
-  test("Router works WITHOUT a store (effects disabled), driven by props", () => {
-    const Router = createRouter(routes); // no store
-    render(<Router location="/user/7" />);
-    expect(screen.getByText("User:7")).toBeInTheDocument();
-    expect(mockHandleHistoryChange).not.toHaveBeenCalled();
-  });
-
-  test("Router shows 404 for unmatched path (with store)", () => {
+  test("dispatches LOCATION_CHANGED only on real navigation (history.push)", async () => {
+    const dispatch = jest.fn();
+    const value = { state: { location: "/a" }, dispatch };
     const Router = createRouter(routes, StateContext);
-    const { rerender } = render(
-      <TestProvider>
+
+    render(
+      <StateContext.Provider value={value}>
         <Router />
-      </TestProvider>
+      </StateContext.Provider>
     );
-    act(() => {
-      appHistory.push("/nope");
+
+    // Same-path push should NOT dispatch or change view
+    await act(async () => {
+      mockedHistory.push("/a");
     });
-    rerender(
-      <TestProvider>
-        <Router />
-      </TestProvider>
+    await new Promise((r) => setTimeout(r, 0));
+    expect(dispatch).not.toHaveBeenCalled();
+    expect(screen.getByText("Page A")).toBeInTheDocument();
+
+    // Real change should dispatch once and render Page B
+    await act(async () => {
+      mockedHistory.push("/b?x=1");
+    });
+    await waitFor(() => expect(screen.getByText("Page B")).toBeInTheDocument());
+    expect(dispatch).toHaveBeenCalledTimes(1);
+    expect(dispatch).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: "LOCATION_CHANGED",
+        location: "/b?x=1",
+        meta: expect.objectContaining({ action: "PUSH" }),
+      })
     );
-    expect(screen.getByText("404")).toBeInTheDocument();
+  });
+
+  test("<Link> prevents default and navigates with history.push", async () => {
+    await act(async () => {
+      mockedHistory.replace("/a"); // ensure we're on /a
+    });
+    const dispatch = jest.fn();
+    const value = { state: { location: "/a" }, dispatch };
+    const Router = createRouter(routes, StateContext);
+
+    render(
+      <StateContext.Provider value={value}>
+        <Router />
+      </StateContext.Provider>
+    );
+
+    const link = screen.getByTestId("goto-b");
+    await act(async () => {
+      fireEvent.click(link);
+    });
+
+    await waitFor(() => expect(screen.getByText("Page B")).toBeInTheDocument());
+    expect(dispatch).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: "LOCATION_CHANGED",
+        location: "/b",
+      })
+    );
+  });
+
+  test("renders catch-all route when no match", async () => {
+    await act(async () => {
+      mockedHistory.replace("/unknown");
+    });
+    const dispatch = jest.fn();
+    const value = { state: { location: "/unknown" }, dispatch };
+    const Router = createRouter(routes, StateContext);
+
+    render(
+      <StateContext.Provider value={value}>
+        <Router />
+      </StateContext.Provider>
+    );
+
+    expect(screen.getByText("Not Found")).toBeInTheDocument();
+    // No dispatch on mount
+    expect(dispatch).not.toHaveBeenCalled();
   });
 });

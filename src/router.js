@@ -1,116 +1,103 @@
-import React from "react";
-import appHistory from "./history.js";
-import { setScrollToSessionStorage } from "./scroll.js";
-import helper from "./helper.js";
-import handleHistoryChange from "./handleHistoryChange.js";
+import React, { useContext, useEffect, useMemo, useRef, useState } from "react";
+import history from "./history.js";
 
-let handleSyncRegistered = false;
+/** Programmatic navigation helper */
+export const navigate = (to, { replace = false, state } = {}) => {
+  if (replace) history.replace(to, state);
+  else history.push(to, state);
+};
 
-export const Link = ({
-  to,
-  className,
-  children,
-  mode = "push",
-  onMouseEnter,
-  onMouseLeave,
-  style = {},
-  ...rest
-}) => {
-  const onClick = (e) => {
+/** Tiny <Link> that routes via shared history without full page reloads. */
+export const Link = ({ to, replace = false, state, onClick, ...rest }) => {
+  const handleClick = (e) => {
+    if (onClick) onClick(e);
     if (
       e.defaultPrevented ||
-      e.button !== 0 ||
+      e.button !== 0 || // left click
       e.metaKey ||
-      e.ctrlKey ||
       e.altKey ||
+      e.ctrlKey ||
       e.shiftKey
     ) {
       return;
     }
     e.preventDefault();
-    setScrollToSessionStorage();
-    if (!appHistory) return;
-    mode === "replace" ? appHistory.replace(to) : appHistory.push(to);
+    if (replace) history.replace(to, state);
+    else history.push(to, state);
   };
-
   return (
     <a
-      href={to}
-      className={className}
-      onClick={onClick}
-      onMouseEnter={onMouseEnter}
-      onMouseLeave={onMouseLeave}
-      style={style}
+      href={typeof to === "string" ? to : to?.pathname || "#"}
+      onClick={handleClick}
       {...rest}
-    >
-      {children}
-    </a>
+    />
   );
 };
 
-export const navigate = (to, mode = "push") => {
-  if (!appHistory) return;
-  mode === "replace" ? appHistory.replace(to) : appHistory.push(to);
+/** Simple exact-path matcher with optional "*" catch-all. */
+const matchRoute = (routes, pathname) => {
+  const exact = routes.find((r) => r.path === pathname);
+  if (exact) return exact;
+  return routes.find((r) => r.path === "*") || null;
 };
 
-// createRouter(routes, store?) => (props) => <Component/>
-export const createRouter = (routes, store) => (props) => {
-  // prepare routes once
-  const preparedRoutesRef = React.useRef(null);
-  if (!preparedRoutesRef.current) {
-    preparedRoutesRef.current = helper.prepare(routes);
-  }
+/**
+ * createRouter(routes, storeContext?) => <Router />
+ *
+ * - If a store context is provided, the router will use {state, dispatch} from it.
+ * - If no store context is provided, props are treated as state and dispatch=false.
+ * - Assumes initial store already has the current location; DOES NOT dispatch on mount.
+ * - Listens to history and dispatches LOCATION_CHANGED only when location truly changes.
+ */
+export const createRouter = (routes, storeContext) => (props) => {
+  const appState = storeContext
+    ? useContext(storeContext)
+    : { state: props, dispatch: false };
 
-  // store is OPTIONAL: fall back to props when absent
-  const appState = store
-    ? React.useContext(store)
-    : { state: props || {}, dispatch: false };
+  const { state, dispatch } = appState || {};
 
-  const { state = {}, dispatch = false } = appState || {};
+  const currentFromHistory =
+    (history?.location?.pathname || "") + (history?.location?.search || "");
 
-  // Only wire effects when we actually have a dispatch function
-  React.useEffect(() => {
-    if (!(dispatch && typeof dispatch === "function") || !appHistory) return;
+  const initialLocation = (state && state.location) || currentFromHistory;
 
-    const sync = ({ location }) => {
-      const nextLoc = location.pathname + (location.search || "");
-      dispatch({ type: "LOCATION_CHANGED", location: nextLoc });
-    };
-    const unlisten = appHistory.listen(sync);
+  // Track last known full location string (path + search)
+  const lastLocRef = useRef(initialLocation);
 
-    // initial sync
-    dispatch({
-      type: "LOCATION_CHANGED",
-      location:
-        appHistory.location.pathname + (appHistory.location.search || ""),
+  // Keep local state so the component re-renders on navigation
+  const [loc, setLoc] = useState(initialLocation);
+
+  useEffect(() => {
+    if (!history || typeof history.listen !== "function") return;
+
+    const unlisten = history.listen(({ location, action }) => {
+      const nextLoc = (location.pathname || "") + (location.search || "");
+      if (nextLoc !== lastLocRef.current) {
+        lastLocRef.current = nextLoc;
+        setLoc(nextLoc); // trigger re-render
+        if (typeof dispatch === "function") {
+          dispatch({
+            type: "LOCATION_CHANGED",
+            location: nextLoc,
+            meta: { action },
+          });
+        }
+      }
     });
 
-    return () => unlisten();
+    return () => {
+      if (typeof unlisten === "function") unlisten();
+    };
   }, [dispatch]);
 
-  React.useEffect(() => {
-    if (!handleSyncRegistered && dispatch && typeof dispatch === "function") {
-      handleHistoryChange(dispatch);
-      handleSyncRegistered = true;
-    }
-  }, [dispatch]);
-
-  // Derive current location from state; otherwise history; otherwise props; otherwise "/"
-  const currentLocation =
-    state.location ||
-    (appHistory &&
-      appHistory.location &&
-      appHistory.location.pathname + (appHistory.location.search || "")) ||
-    (props && props.location) ||
-    "/";
-
-  const pathOnly = String(currentLocation).split("?", 1)[0];
-  const { Component, params } = helper.match(
-    preparedRoutesRef.current,
-    pathOnly
+  const activePathname = (loc || "").split("?")[0];
+  const matched = useMemo(
+    () => matchRoute(routes, activePathname),
+    [routes, activePathname]
   );
 
-  return <Component {...state} params={params} dispatch={dispatch} />;
+  const Element = matched?.element || (() => null);
+  return <Element />;
 };
 
-export default { Link, navigate, createRouter };
+export default createRouter;
