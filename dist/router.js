@@ -119,7 +119,9 @@ var createRouter = exports.createRouter = function createRouter(routes, storeCon
     var Component = (matched === null || matched === void 0 ? void 0 : matched.Component) || function () {
       return null;
     };
-    return /*#__PURE__*/_react["default"].createElement(Component, null);
+    return /*#__PURE__*/_react["default"].createElement(Component, (0, _extends2["default"])({}, state, {
+      dispatch: dispatch
+    }));
   };
 };
 var _default = exports["default"] = createRouter;

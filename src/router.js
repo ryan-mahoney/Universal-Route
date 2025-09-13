@@ -101,7 +101,7 @@ export const createRouter = (routes, storeContext) => (props) => {
   );
 
   const Component = matched?.Component || (() => null);
-  return <Component />;
+  return <Component {...state} dispatch={dispatch} />;
 };
 
 export default createRouter;
