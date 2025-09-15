@@ -35,20 +35,17 @@ export const About = (props) => {
   );
 };
 
-export const User = ({ params, ...props }) => {
+export const User = ({ id }) => {
   return (
     <div style={{ padding: 24 }}>
       <h1>User</h1>
       <p>
-        User ID: <strong>{params.id}</strong>
+        User ID: <strong>{id}</strong>
       </p>
       <nav style={{ display: "flex", gap: 12 }}>
         <Link to="/">Home</Link>
         <Link to="/about">About</Link>
       </nav>
-      <pre style={{ background: "#f6f8fa", padding: 12, marginTop: 16 }}>
-        {JSON.stringify({ params, state: props }, null, 2)}
-      </pre>
     </div>
   );
 };

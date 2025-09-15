@@ -35,12 +35,9 @@ export const Link = ({ to, replace = false, state, onClick, ...rest }) => {
   );
 };
 
-/** Simple exact-path matcher with optional "*" catch-all. */
+/** Simple regex path matcher with optional "*" catch-all. */
 const matchRoute = (routes, pathname) => {
-  const exact = routes.find((r) => r.path === pathname);
-
-  if (exact) return exact;
-  return routes.find((r) => r.path === "*") || null;
+  return helper.match(routes, pathname);
 };
 
 /**
