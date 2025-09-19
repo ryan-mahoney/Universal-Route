@@ -53,7 +53,7 @@ export const createRouter = (routes, storeContext) => (props) => {
     ? useContext(storeContext)
     : { state: props, dispatch: false };
 
-  const { state, dispatch } = appState || {};
+  const { state, dispatch, pageRefresher } = appState || {};
 
   routes = helper.prepare(routes);
 
@@ -98,7 +98,9 @@ export const createRouter = (routes, storeContext) => (props) => {
   );
 
   const Component = matched?.Component || (() => null);
-  return <Component {...state} dispatch={dispatch} />;
+  return (
+    <Component {...state} dispatch={dispatch} pageRefresher={pageRefresher} />
+  );
 };
 
 export default createRouter;

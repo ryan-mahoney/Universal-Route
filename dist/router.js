@@ -47,6 +47,11 @@ var Link = exports.Link = function Link(_ref2) {
   }, rest));
 };
 
+/** Simple regex path matcher with optional "*" catch-all. */
+var matchRoute = function matchRoute(routes, pathname) {
+  return _helper["default"].match(routes, pathname);
+};
+
 /**
  * createRouter(routes, storeContext?) => <Router />
  *
@@ -64,12 +69,9 @@ var createRouter = exports.createRouter = function createRouter(routes, storeCon
     };
     var _ref3 = appState || {},
       state = _ref3.state,
-      dispatch = _ref3.dispatch;
-
-    // Prepare routes with regex matchers
-    var preparedRoutes = (0, _react.useMemo)(function () {
-      return _helper["default"].prepare(routes);
-    }, [routes]);
+      dispatch = _ref3.dispatch,
+      pageRefresher = _ref3.pageRefresher;
+    routes = _helper["default"].prepare(routes);
     var currentFromHistory = ((_history["default"] === null || _history["default"] === void 0 || (_history$location = _history["default"].location) === null || _history$location === void 0 ? void 0 : _history$location.pathname) || "") + ((_history["default"] === null || _history["default"] === void 0 || (_history$location2 = _history["default"].location) === null || _history$location2 === void 0 ? void 0 : _history$location2.search) || "");
     var initialLocation = state && state.location || currentFromHistory;
 
@@ -106,16 +108,15 @@ var createRouter = exports.createRouter = function createRouter(routes, storeCon
       };
     }, [dispatch]);
     var activePathname = (loc || "").split("?")[0];
-
-    // Use helper.match instead of the broken matchRoute function
     var matched = (0, _react.useMemo)(function () {
-      return _helper["default"].match(preparedRoutes, activePathname);
-    }, [preparedRoutes, activePathname]);
+      return matchRoute(routes, activePathname);
+    }, [routes, activePathname]);
     var Component = (matched === null || matched === void 0 ? void 0 : matched.Component) || function () {
       return null;
     };
-    return /*#__PURE__*/_react["default"].createElement(Component, (0, _extends2["default"])({}, state, matched.params, {
-      dispatch: dispatch
+    return /*#__PURE__*/_react["default"].createElement(Component, (0, _extends2["default"])({}, state, {
+      dispatch: dispatch,
+      pageRefresher: pageRefresher
     }));
   };
 };
