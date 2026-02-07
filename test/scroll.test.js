@@ -3,7 +3,7 @@ import {
   setScrollToSessionStorage,
   setScrollForKey,
   getScrollFromSessionStorage,
-} from "../src/scroll.js";
+} from "../src/scroll";
 
 describe("scroll.js", () => {
   beforeEach(() => {

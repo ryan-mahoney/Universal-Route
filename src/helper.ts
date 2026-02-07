@@ -1,12 +1,61 @@
-// src/helper.js
+// src/helper.ts
 // Route preparation & matching utility for Universal Route.
 // Accepts either an array of route objects OR a map of { "/path": Component | [Component, reducerKey] }.
+import type { ComponentType } from "react";
 
-const escapeRegex = (s) => s.replace(/[-/\\^$*+?.()|[\]{}]/g, "\\$&");
+export interface RouteDefinition {
+  path: string;
+  Component?: ComponentType<any>;
+  element?: ComponentType<any>;
+  render?: ComponentType<any>;
+  reducerKey?: string;
+}
+
+export type RouteMapValue =
+  | ComponentType<any>
+  | [ComponentType<any>]
+  | [ComponentType<any>, string]
+  | {
+      Component?: ComponentType<any>;
+      element?: ComponentType<any>;
+      render?: ComponentType<any>;
+      reducerKey?: string;
+    };
+
+export type RouteMap = Record<string, RouteMapValue>;
+
+export type RoutesInput = RouteDefinition[] | RouteMap;
+
+export interface PreparedRoute {
+  path: string;
+  Component: ComponentType<any>;
+  reducerKey?: string;
+  matcher: (pathname: string) => { params: Record<string, string> } | null;
+}
+
+export interface RouteMatchResult {
+  Component: ComponentType<any>;
+  params: Record<string, string>;
+  reducerKey?: string;
+}
+
+type NormalizedRoute = {
+  path: string;
+  Component: ComponentType<any>;
+  reducerKey?: string;
+};
+
+const isPreparedRouteArray = (
+  routes: RoutesInput | PreparedRoute[],
+): routes is PreparedRoute[] =>
+  Array.isArray(routes) &&
+  routes.every((route) => typeof route === "object" && typeof (route as PreparedRoute).matcher === "function");
+
+const escapeRegex = (s: string): string => s.replace(/[-/\\^$*+?.()|[\]{}]/g, "\\$&");
 
 // Compile a path pattern like "/users/:id" into a RegExp with named groups.
 // Supports "*" or "/*" catch-all.
-const compilePath = (path) => {
+const compilePath = (path: string): { regex: RegExp; names: string[] } => {
   if (!path || path === "/") {
     return { regex: /^\/?$/, names: [] };
   }
@@ -14,7 +63,7 @@ const compilePath = (path) => {
     return { regex: /^.*$/, names: [] };
   }
 
-  const parts = String(path)
+  const parts: Array<{ src: string; name: string | null }> = String(path)
     .split("/")
     .filter(Boolean)
     .map((part) => {
@@ -26,25 +75,24 @@ const compilePath = (path) => {
     });
 
   const pattern = "^/" + parts.map((p) => p.src).join("/") + "/?$";
-  const names = parts.filter((p) => p.name).map((p) => p.name);
+  const names = parts.filter((p) => p.name).map((p) => p.name as string);
   return { regex: new RegExp(pattern), names };
 };
 
 // Graceful 404 Component that renders the text "404" (no React import required)
-const Generic404 = () => "404";
+const Generic404 = (): string => "404";
 
 // Normalize a single map entry: (path, value) -> { path, Component, reducerKey }
-const normalizeMapEntry = (path, value) => {
-  let Component, reducerKey;
+const normalizeMapEntry = (path: string, value: RouteMapValue): NormalizedRoute => {
+  let Component: ComponentType<any>;
+  let reducerKey: string | undefined;
 
   if (Array.isArray(value)) {
     [Component, reducerKey] = value;
   } else if (typeof value === "function") {
     Component = value;
   } else if (value && typeof value === "object") {
-    // Allow object form { Component, element, render, reducerKey }
-    Component =
-      value.Component || value.element || value.render || (() => null);
+    Component = value.Component || value.element || value.render || (() => null);
     reducerKey = value.reducerKey;
   } else {
     Component = () => null;
@@ -54,30 +102,23 @@ const normalizeMapEntry = (path, value) => {
 };
 
 // Normalize a route object from array form: { path, Component | element | render, reducerKey? }
-const normalizeArrayEntry = (routeObj = {}) => {
+const normalizeArrayEntry = (routeObj: RouteDefinition = { path: "/" }): NormalizedRoute => {
   const { path = "/", reducerKey } = routeObj;
-  const Component =
-    routeObj.Component || routeObj.element || routeObj.render || (() => null);
+  const Component = routeObj.Component || routeObj.element || routeObj.render || (() => null);
   return { path, Component, reducerKey };
 };
 
 // Convert routes (array or map) into a uniform list of { path, Component, reducerKey }
-const toList = (routes) => {
+const toList = (routes: RoutesInput): NormalizedRoute[] => {
   if (Array.isArray(routes)) {
     return routes.map(normalizeArrayEntry);
   }
-  if (routes && typeof routes === "object") {
-    return Object.entries(routes).map(([path, value]) =>
-      normalizeMapEntry(path, value)
-    );
-  }
-  throw new TypeError(
-    "routes must be an array of route objects or a map of { path: Component | [Component, reducerKey] }"
-  );
+
+  return Object.entries(routes).map(([path, value]) => normalizeMapEntry(path, value));
 };
 
 // Public: prepare routes by attaching a matcher to each entry.
-export const prepare = (routes = []) => {
+export const prepare = (routes: RoutesInput = []): PreparedRoute[] => {
   const list = toList(routes);
 
   return list.map((r) => {
@@ -87,15 +128,15 @@ export const prepare = (routes = []) => {
     }
 
     const { regex, names } = compilePath(r.path);
-    const matcher = (pathname) => {
+    const matcher = (pathname: string): { params: Record<string, string> } | null => {
       const m = regex.exec(pathname);
       if (!m) return null;
 
       const params = m.groups
         ? Object.fromEntries(
-            Object.entries(m.groups).map(([k, v]) => [k, decodeURIComponent(v)])
+            Object.entries(m.groups).map(([k, v]) => [k, decodeURIComponent(v as string)]),
           )
-        : names.reduce((acc, name, i) => {
+        : names.reduce<Record<string, string>>((acc, name, i) => {
             acc[name] = decodeURIComponent(m[i + 1]);
             return acc;
           }, {});
@@ -108,7 +149,7 @@ export const prepare = (routes = []) => {
 };
 
 // Internal: find a match in a prepared list
-const matchOne = (preparedRoutes, pathname) => {
+const matchOne = (preparedRoutes: PreparedRoute[], pathname: string): RouteMatchResult => {
   for (const r of preparedRoutes) {
     if (typeof r.matcher !== "function") continue;
     const res = r.matcher(pathname);
@@ -136,16 +177,11 @@ const matchOne = (preparedRoutes, pathname) => {
 };
 
 // Public: match() accepts either raw routes or an already-prepared list
-export const match = (routesOrPrepared, pathname) => {
-  const isPreparedArray =
-    Array.isArray(routesOrPrepared) &&
-    routesOrPrepared.every(
-      (r) => typeof r === "object" && typeof r.matcher === "function"
-    );
-
-  const prepared = isPreparedArray
-    ? routesOrPrepared
-    : prepare(routesOrPrepared);
+export const match = (
+  routes: RoutesInput | PreparedRoute[],
+  pathname: string,
+): RouteMatchResult => {
+  const prepared = isPreparedRouteArray(routes) ? routes : prepare(routes);
   return matchOne(prepared, pathname);
 };
 

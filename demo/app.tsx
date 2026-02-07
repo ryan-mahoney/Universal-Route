@@ -2,12 +2,12 @@ import React, { createContext, useReducer } from "react";
 import { createRoot } from "react-dom/client";
 
 // ⬇️ mock backend
-import { installMockFetch } from "./mockFetch.js";
+import { installMockFetch } from "./mockFetch.ts";
 installMockFetch();
 
-import { createRouter } from "../src/index.js";
-import routesMap from "./routes.js";
-import reducer, { initialState } from "./reducer.js";
+import { createRouter } from "../src/index.ts";
+import routesMap from "./routes.tsx";
+import reducer, { initialState } from "./reducer.ts";
 
 // --- Store is REQUIRED ---
 export const StateContext = createContext(null);

@@ -3,16 +3,14 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "concurrently -k \"esbuild app.js --bundle --loader:.js=jsx --format=esm --external:react --external:react-dom --external:react-dom/client --outfile=dist/bundle.js --sourcemap --watch\" \"serve .\"",
-    "build": "esbuild app.js --bundle --loader:.js=jsx --format=esm --external:react --external:react-dom --external:react-dom/client --outfile=dist/bundle.js --minify"
+    "dev": "concurrently -k \"esbuild app.tsx --bundle --format=esm --external:react --external:react-dom --external:react-dom/client --outfile=dist/bundle.js --sourcemap --watch\" \"serve .\"",
+    "build": "esbuild app.tsx --bundle --format=esm --external:react --external:react-dom --external:react-dom/client --outfile=dist/bundle.js --minify"
   },
   "dependencies": {
     "history": "^5.3.0",
     "nprogress": "^0.2.0",
-    "path-to-regexp": "^6.3.0",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "uuid": "^9.0.1"
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1"
   },
   "devDependencies": {
     "esbuild": "^0.21.0",

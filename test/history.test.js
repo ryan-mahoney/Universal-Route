@@ -1,4 +1,4 @@
-import { makeMemoryHistory } from "../src/history.js";
+import { makeMemoryHistory } from "../src/history";
 
 describe("history.js", () => {
   test("makeMemoryHistory supports location updates and listen actions", () => {

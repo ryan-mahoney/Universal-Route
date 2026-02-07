@@ -4,10 +4,10 @@ module.exports = {
   transform: {
     "^.+\\.[jt]sx?$": "babel-jest",
   },
-  moduleFileExtensions: ["js", "jsx"],
+  moduleFileExtensions: ["ts", "tsx", "js", "jsx"],
   setupFilesAfterEnv: ["<rootDir>/test/setupTests.js"],
 
-  testMatch: ["**/test/**/*.(test|spec).js?(x)"],
+  testMatch: ["**/test/**/*.(test|spec).[jt]s?(x)"],
   // Useful to keep JSDOM URL stable for URL() logic
   testEnvironmentOptions: {
     url: "http://localhost/",

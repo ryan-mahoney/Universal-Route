@@ -1,4 +1,4 @@
-import routesHelper from "../src/helper.js";
+import routesHelper from "../src/helper";
 import React from "react";
 import { render, screen } from "@testing-library/react";
 
@@ -24,6 +24,22 @@ describe("helper.js", () => {
   test("prepare() normalizes object map route form", () => {
     const prepared = routesHelper.prepare({
       "/x": { Component: Dummy, reducerKey: "slice" },
+    });
+
+    expect(prepared).toHaveLength(1);
+    expect(prepared[0]).toEqual(
+      expect.objectContaining({
+        path: "/x",
+        Component: Dummy,
+        reducerKey: "slice",
+      })
+    );
+    expect(typeof prepared[0].matcher).toBe("function");
+  });
+
+  test("prepare() supports object map route form with element", () => {
+    const prepared = routesHelper.prepare({
+      "/x": { element: Dummy, reducerKey: "slice" },
     });
 
     expect(prepared).toHaveLength(1);
