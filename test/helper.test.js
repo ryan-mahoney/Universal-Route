@@ -155,4 +155,14 @@ describe("helper.js", () => {
     expect(routesHelper.match(prepared, "/users/42").params).toEqual({ id: "42" });
     expect(routesHelper.match(prepared, "/users/42/extra").Component).not.toBe(Dummy);
   });
+
+  test("prepare() tolerates trailing whitespace around :param+ segment names", () => {
+    const prepared = routesHelper.prepare([
+      { path: "/application/organizations/:params+ ", element: Dummy },
+    ]);
+
+    expect(
+      routesHelper.match(prepared, "/application/organizations/123/edit").params
+    ).toEqual({ params: "123/edit" });
+  });
 });

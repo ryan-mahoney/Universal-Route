@@ -60,8 +60,8 @@ const decodeParam = (value: string): string => {
   }
 };
 
-// Compile a path pattern like "/users/:id" into a RegExp with named groups.
-// Supports "*" or "/*" catch-all.
+// Compile a path pattern like "/users/:id" into a RegExp with capture groups.
+// Supports "*" or "/*" catch-all and ":param+" rest parameters.
 const compilePath = (path: string): { regex: RegExp; names: string[] } => {
   if (!path || path === "/") {
     return { regex: /^\/?$/, names: [] };
@@ -75,12 +75,18 @@ const compilePath = (path: string): { regex: RegExp; names: string[] } => {
     .filter(Boolean)
     .map((part) => {
       if (part.startsWith(":")) {
-        const raw = part.slice(1);
-        if (raw.endsWith("+")) {
-          const name = raw.slice(0, -1);
-          return { src: `(?<${name}>.+)`, name };
+        const raw = part.slice(1).trim();
+        const modifier = raw[raw.length - 1];
+        const hasModifier = modifier === "+" || modifier === "*" || modifier === "?";
+        const name = (hasModifier ? raw.slice(0, -1) : raw).trim();
+
+        if (!name) {
+          throw new TypeError(`Invalid route param segment \"${part}\" in path \"${path}\"`);
         }
-        return { src: `(?<${raw}>[^/]+)`, name: raw };
+
+        // Use plain captures so invalid JS identifier characters in route params do not break regex compilation.
+        const src = modifier === "+" ? "(.+)" : "([^/]+)";
+        return { src, name };
       }
       return { src: escapeRegex(part), name: null };
     });
@@ -143,14 +149,10 @@ export const prepare = (routes: RoutesInput = []): PreparedRoute[] => {
       const m = regex.exec(pathname);
       if (!m) return null;
 
-      const params = m.groups
-        ? Object.fromEntries(
-            Object.entries(m.groups).map(([k, v]) => [k, decodeParam(v as string)]),
-          )
-        : names.reduce<Record<string, string>>((acc, name, i) => {
-            acc[name] = decodeParam(m[i + 1]);
-            return acc;
-          }, {});
+      const params = names.reduce<Record<string, string>>((acc, name, i) => {
+        acc[name] = decodeParam(m[i + 1]);
+        return acc;
+      }, {});
 
       return { params };
     };
