@@ -211,4 +211,53 @@ describe("handleHistoryChange", () => {
     history.push("/with-uuid");
     await flush(); // flush both microtasks
   });
+
+  test("ignores stale responses when an earlier request resolves after a newer navigation", async () => {
+    const history = makeHistory("/");
+    let resolveSlow;
+    let resolveFast;
+    const slow = new Promise((resolve) => {
+      resolveSlow = resolve;
+    });
+    const fast = new Promise((resolve) => {
+      resolveFast = resolve;
+    });
+    const fetchImpl = jest
+      .fn()
+      .mockImplementationOnce(() => slow)
+      .mockImplementationOnce(() => fast);
+    const setTitle = jest.fn();
+    const progress = { start: jest.fn(), done: jest.fn() };
+    const dispatch = jest.fn();
+
+    handleHistoryChange(dispatch, { history, fetchImpl, setTitle, progress });
+
+    history.push("/slow");
+    history.push("/fast");
+
+    resolveFast({
+      status: 200,
+      json: async () => ({ title: "Fast" }),
+    });
+    await flush();
+
+    expect(dispatch).toHaveBeenCalledTimes(1);
+    expect(dispatch).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: "CHANGE_PAGE",
+        data: expect.objectContaining({ location: "/fast", title: "Fast" }),
+      })
+    );
+    expect(setTitle).toHaveBeenCalledTimes(1);
+    expect(setTitle).toHaveBeenCalledWith("Fast");
+
+    resolveSlow({
+      status: 200,
+      json: async () => ({ title: "Slow" }),
+    });
+    await flush();
+
+    expect(dispatch).toHaveBeenCalledTimes(1);
+    expect(setTitle).toHaveBeenCalledTimes(1);
+  });
 });
