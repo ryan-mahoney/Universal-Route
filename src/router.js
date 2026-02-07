@@ -8,31 +8,63 @@ export const navigate = (to, { replace = false, state } = {}) => {
   else history.push(to, state);
 };
 
+const toHref = (to) => {
+  if (typeof to === "string") return to;
+  if (!to || typeof to !== "object") {
+    throw new TypeError("Link 'to' must be a string or location object");
+  }
+  const { pathname, search = "", hash = "" } = to;
+  if (typeof pathname !== "string" || pathname.length === 0) {
+    throw new TypeError("Location object 'pathname' must be a non-empty string");
+  }
+  return `${pathname}${search}${hash}`;
+};
+
+const isHttpLikeHref = (href) => {
+  if (
+    href.startsWith("/") ||
+    href.startsWith("./") ||
+    href.startsWith("../") ||
+    href.startsWith("?") ||
+    href.startsWith("#")
+  ) {
+    return true;
+  }
+  const protocolMatch = href.match(/^([a-zA-Z][a-zA-Z\d+.-]*):/);
+  if (!protocolMatch) return true;
+  const protocol = protocolMatch[1].toLowerCase();
+  return protocol === "http" || protocol === "https";
+};
+
+const shouldHandleClientNavigation = (event, anchorProps) => {
+  if (
+    event.defaultPrevented ||
+    event.button !== 0 ||
+    event.metaKey ||
+    event.altKey ||
+    event.ctrlKey ||
+    event.shiftKey
+  ) {
+    return false;
+  }
+  const { target, download, href } = anchorProps;
+  if (download !== undefined) return false;
+  if (target && target !== "_self") return false;
+  return isHttpLikeHref(href);
+};
+
 /** Tiny <Link> that routes via shared history without full page reloads. */
 export const Link = ({ to, replace = false, state, onClick, ...rest }) => {
+  const href = toHref(to);
+
   const handleClick = (e) => {
     if (onClick) onClick(e);
-    if (
-      e.defaultPrevented ||
-      e.button !== 0 || // left click
-      e.metaKey ||
-      e.altKey ||
-      e.ctrlKey ||
-      e.shiftKey
-    ) {
-      return;
-    }
+    if (!shouldHandleClientNavigation(e, { ...rest, href })) return;
     e.preventDefault();
     if (replace) history.replace(to, state);
     else history.push(to, state);
   };
-  return (
-    <a
-      href={typeof to === "string" ? to : to?.pathname || "#"}
-      onClick={handleClick}
-      {...rest}
-    />
-  );
+  return <a href={href} onClick={handleClick} {...rest} />;
 };
 
 /** Simple regex path matcher with optional "*" catch-all. */
@@ -55,7 +87,7 @@ export const createRouter = (routes, storeContext) => (props) => {
 
   const { state, dispatch, pageRefresher } = appState || {};
 
-  routes = helper.prepare(routes);
+  const preparedRoutes = useMemo(() => helper.prepare(routes), [routes]);
 
   const currentFromHistory =
     (history?.location?.pathname || "") + (history?.location?.search || "");
@@ -93,13 +125,19 @@ export const createRouter = (routes, storeContext) => (props) => {
 
   const activePathname = (loc || "").split("?")[0];
   const matched = useMemo(
-    () => matchRoute(routes, activePathname),
-    [routes, activePathname]
+    () => matchRoute(preparedRoutes, activePathname),
+    [preparedRoutes, activePathname]
   );
 
   const Component = matched?.Component || (() => null);
+  const routeParams = matched?.params || {};
   return (
-    <Component {...state} dispatch={dispatch} pageRefresher={pageRefresher} />
+    <Component
+      {...state}
+      {...routeParams}
+      dispatch={dispatch}
+      pageRefresher={pageRefresher}
+    />
   );
 };
 
