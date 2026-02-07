@@ -1,4 +1,4 @@
-jest.mock("../src/history.js", () => {
+jest.mock("../src/history", () => {
   const history = {
     push: jest.fn(),
     replace: jest.fn(),
@@ -12,8 +12,8 @@ jest.mock("../src/history.js", () => {
   };
 });
 
-import * as API from "../src/index.js";
-import mockedHistory from "../src/history.js";
+import * as API from "../src/index";
+import mockedHistory from "../src/history";
 
 describe("index.js re-exports", () => {
   afterEach(() => {

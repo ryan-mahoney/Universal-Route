@@ -7,10 +7,10 @@ import {
   createEvent,
 } from "@testing-library/react";
 
-import { createRouter, Link, navigate } from "../src/router.js";
+import { createRouter, Link, navigate } from "../src/router";
 
 // ---- Mock a real-ish shared memory history ----
-jest.mock("../src/history.js", () => {
+jest.mock("../src/history", () => {
   let listeners = [];
 
   const parsePath = (path, prev) => {
@@ -52,7 +52,7 @@ jest.mock("../src/history.js", () => {
 
 // Re-import after mock so we get the mocked default
 // eslint-disable-next-line import/first
-import mockedHistory from "../src/history.js";
+import mockedHistory from "../src/history";
 
 // Test pages
 const PageA = () => (

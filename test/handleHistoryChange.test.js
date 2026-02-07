@@ -1,5 +1,5 @@
-import handleHistoryChange, { __test__ } from "../src/handleHistoryChange.js";
-import { setScrollForKey } from "../src/scroll.js";
+import handleHistoryChange, { __test__ } from "../src/handleHistoryChange";
+import { setScrollForKey } from "../src/scroll";
 
 // Use fake timers for scroll restore setTimeout
 jest.useFakeTimers();

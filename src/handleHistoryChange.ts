@@ -1,6 +1,19 @@
-import { getScrollFromSessionStorage } from "./scroll.js";
+import type { BrowserHistory, Update } from "history";
+import { getScrollFromSessionStorage, type ScrollPosition } from "./scroll";
 
-const makeUuid = () => {
+export interface ProgressAPI {
+  start(): void;
+  done(): void;
+}
+
+export interface HandleHistoryChangeOptions {
+  history?: BrowserHistory | null;
+  fetchImpl?: ((url: string, init?: RequestInit) => Promise<Response>) | null;
+  setTitle?: (title: string) => void;
+  progress?: ProgressAPI;
+}
+
+const makeUuid = (): string => {
   // Browser / Workers
   if (typeof globalThis !== "undefined" && globalThis.crypto) {
     if (typeof globalThis.crypto.randomUUID === "function") {
@@ -18,7 +31,7 @@ const makeUuid = () => {
   }
   // Node
   try {
-    const { randomUUID } = require("node:crypto");
+    const { randomUUID } = (globalThis as any).require("node:crypto");
     if (typeof randomUUID === "function") return randomUUID();
   } catch {}
   // Last-resort (non-crypto)
@@ -30,10 +43,10 @@ const makeUuid = () => {
 };
 
 const INSTALLED = Symbol.for("handleHistoryChange:installed");
-let _inFlight = null;
-let _latestRequestId = 0;
+let _inFlight: AbortController | null = null;
+let _latestRequestId: number = 0;
 
-function originOf() {
+const originOf = (): string => {
   try {
     if (
       typeof window !== "undefined" &&
@@ -44,41 +57,41 @@ function originOf() {
     }
   } catch {}
   return "http://localhost";
-}
+};
 
-function buildUrl(loc) {
+const buildUrl = (loc: { pathname?: string; search?: string }): string => {
   const url = new URL((loc.pathname || "/") + (loc.search || ""), originOf());
   url.searchParams.set("uuid", makeUuid());
   return url.toString();
-}
+};
 
-function kindFrom(status) {
+const kindFrom = (status: number): "ok" | "404" | "5xx" => {
   if (status === 404) return "404";
   if (Math.floor(status / 100) === 5) return "5xx";
   return "ok";
-}
+};
 
 export default function handleHistoryChange(
-  dispatch,
+  dispatch: (action: { type: string; data: Record<string, unknown> }) => void,
   {
     history,
     fetchImpl = (typeof fetch !== "undefined" && fetch) || null,
-    setTitle = function (t) {
+    setTitle = function (t: string): void {
       if (typeof document !== "undefined" && t) document.title = t;
     },
     progress = { start() {}, done() {} }, // optional in tests
-  } = {}
-) {
+  }: HandleHistoryChangeOptions = {},
+): void {
   if (!history || !fetchImpl) {
     return;
   }
 
-  if (history[INSTALLED]) {
+  if ((history as any)[INSTALLED]) {
     return;
   }
-  history[INSTALLED] = true;
+  (history as any)[INSTALLED] = true;
 
-  history.listen(function ({ location, action }) {
+  history.listen(function ({ location, action }: Update): void {
     // Abort prior request
     if (_inFlight && typeof _inFlight.abort === "function") {
       try {
@@ -100,13 +113,13 @@ export default function handleHistoryChange(
         method: "GET",
         headers: { Accept: "application/json" },
         signal: _inFlight ? _inFlight.signal : undefined,
-      })
+      }),
     )
-      .then(function (res) {
+      .then(function (res): Promise<{ status: number; data: Record<string, unknown> }> {
         const jp = res && res.json ? res.json() : {};
         return Promise.resolve(jp)
           .then(function (data) {
-            return { status: res ? res.status : 503, data: data || {} };
+            return { status: res ? res.status : 503, data: (data as Record<string, unknown>) || {} };
           })
           .catch(function () {
             return { status: res ? res.status : 503, data: {} };
@@ -115,13 +128,13 @@ export default function handleHistoryChange(
       .catch(function () {
         return { status: 503, data: {} };
       })
-      .then(function ({ status, data }) {
+      .then(function ({ status, data }): void {
         if (requestId !== _latestRequestId) return;
         if (progress && typeof progress.done === "function") progress.done();
 
         // Authorization redirect wins
-        const authLoc =
-          data && data.authorization && data.authorization.location;
+        const authLoc = (data as { authorization?: { location?: string } }).authorization
+          ?.location;
         let finalLoc = authLoc || location.pathname || "/";
 
         // Map 404/5xx if no explicit auth redirect
@@ -137,9 +150,10 @@ export default function handleHistoryChange(
         });
 
         // Title from top-level data.title
-        if (data && data.title) {
+        const title = (data as { title?: string }).title;
+        if (title) {
           // eslint-disable-next-line no-console
-          setTitle(data.title);
+          setTitle(title);
         }
 
         // Scroll behavior: top on PUSH; restore for POP/REPLACE
@@ -148,7 +162,7 @@ export default function handleHistoryChange(
             window.scrollTo(0, 0);
           } else {
             const key = (location.pathname || "/") + (location.search || "");
-            const prev = getScrollFromSessionStorage(key);
+            const prev: ScrollPosition | null = getScrollFromSessionStorage(key);
             if (prev) {
               setTimeout(function () {
                 window.scrollTo(prev.x || 0, prev.y || 0);
@@ -161,9 +175,12 @@ export default function handleHistoryChange(
 }
 
 // Test helpers (reset does nothing now because the guard is per-history instance)
-export const __test__ = {
-  reset: function () {},
-  state: function () {
+export const __test__: {
+  reset: () => void;
+  state: () => { inFlight: boolean };
+} = {
+  reset: function (): void {},
+  state: function (): { inFlight: boolean } {
     return {
       inFlight: !!_inFlight,
     };

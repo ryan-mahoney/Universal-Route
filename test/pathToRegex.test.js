@@ -6,7 +6,7 @@ import {
   regexpToFunction,
   tokensToRegexp,
   pathToRegexp,
-} from "../src/pathToRegex.js";
+} from "../src/pathToRegex";
 
 describe("pathToRegex.js", () => {
   test("parse tokenizes params from a path pattern", () => {
