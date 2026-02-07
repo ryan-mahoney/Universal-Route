@@ -1,6 +1,6 @@
 {
   "name": "@ryanfw/universal-route",
-  "version": "6.0.2",
+  "version": "6.0.3",
   "description": "Routing system for React vertical slice architecture applications.",
   "repository": {
     "type": "git",
