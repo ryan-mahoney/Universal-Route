@@ -31,6 +31,7 @@ const makeUuid = () => {
 
 const INSTALLED = Symbol.for("handleHistoryChange:installed");
 let _inFlight = null;
+let _latestRequestId = 0;
 
 function originOf() {
   try {
@@ -41,7 +42,7 @@ function originOf() {
     ) {
       return window.location.origin;
     }
-  } catch (e) {}
+  } catch {}
   return "http://localhost";
 }
 
@@ -82,8 +83,9 @@ export default function handleHistoryChange(
     if (_inFlight && typeof _inFlight.abort === "function") {
       try {
         _inFlight.abort();
-      } catch (e) {}
+      } catch {}
     }
+    const requestId = ++_latestRequestId;
     _inFlight =
       typeof AbortController !== "undefined" ? new AbortController() : null;
 
@@ -110,10 +112,11 @@ export default function handleHistoryChange(
             return { status: res ? res.status : 503, data: {} };
           });
       })
-      .catch(function (err) {
+      .catch(function () {
         return { status: 503, data: {} };
       })
       .then(function ({ status, data }) {
+        if (requestId !== _latestRequestId) return;
         if (progress && typeof progress.done === "function") progress.done();
 
         // Authorization redirect wins

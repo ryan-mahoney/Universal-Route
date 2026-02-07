@@ -59,6 +59,7 @@ const PageA = () => (
 );
 const PageB = () => <h1>Page B</h1>;
 const NotFound = () => <h1>Not Found</h1>;
+const UserPage = ({ id }) => <h1>User {id}</h1>;
 
 const routes = [
   { path: "/a", element: PageA },
@@ -73,6 +74,10 @@ const StateContext = React.createContext({
 });
 
 describe("Router", () => {
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
   test("does NOT dispatch on initial mount (store already hydrated)", () => {
     const dispatch = jest.fn();
     const value = { state: { location: "/a" }, dispatch };
@@ -168,5 +173,76 @@ describe("Router", () => {
     expect(screen.getByText("Not Found")).toBeInTheDocument();
     // No dispatch on mount
     expect(dispatch).not.toHaveBeenCalled();
+  });
+
+  test("forwards dynamic route params to matched component props", async () => {
+    await act(async () => {
+      mockedHistory.replace("/users/42");
+    });
+    const dispatch = jest.fn();
+    const value = { state: { location: "/users/42" }, dispatch };
+    const Router = createRouter(
+      [
+        { path: "/users/:id", element: UserPage },
+        { path: "*", element: NotFound },
+      ],
+      StateContext
+    );
+
+    render(
+      <StateContext.Provider value={value}>
+        <Router />
+      </StateContext.Provider>
+    );
+
+    expect(screen.getByText("User 42")).toBeInTheDocument();
+  });
+
+  test("does not intercept navigation for target=_blank, download, or mailto links", async () => {
+    const pushSpy = jest.spyOn(mockedHistory, "push");
+    const replaceSpy = jest.spyOn(mockedHistory, "replace");
+
+    render(
+      <div>
+        <Link to="/b" target="_blank" data-testid="blank-link">
+          blank
+        </Link>
+        <Link to="/b" download data-testid="download-link">
+          download
+        </Link>
+        <Link to="mailto:test@example.com" data-testid="mailto-link">
+          mailto
+        </Link>
+      </div>
+    );
+
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("blank-link"));
+      fireEvent.click(screen.getByTestId("download-link"));
+      fireEvent.click(screen.getByTestId("mailto-link"));
+    });
+
+    expect(pushSpy).not.toHaveBeenCalled();
+    expect(replaceSpy).not.toHaveBeenCalled();
+  });
+
+  test("supports object-style to with pathname, search, and hash", async () => {
+    const pushSpy = jest.spyOn(mockedHistory, "push");
+    const to = { pathname: "/b", search: "?x=1", hash: "#section" };
+
+    render(
+      <Link to={to} data-testid="object-link">
+        object
+      </Link>
+    );
+
+    const link = screen.getByTestId("object-link");
+    expect(link.getAttribute("href")).toBe("/b?x=1#section");
+
+    await act(async () => {
+      fireEvent.click(link);
+    });
+
+    expect(pushSpy).toHaveBeenCalledWith(to, undefined);
   });
 });
