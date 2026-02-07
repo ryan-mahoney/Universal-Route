@@ -1,5 +1,6 @@
 // Centralized scroll helpers with query-aware keys
 const SCROLL_KEY = "scroll";
+const MAX_SCROLL_ENTRIES = 100;
 
 export interface ScrollPosition {
   x: number;
@@ -29,6 +30,13 @@ const readStore = (): Record<string, ScrollPosition> => {
 const writeStore = (obj: Record<string, ScrollPosition>): void => {
   if (typeof sessionStorage === "undefined") return;
   try {
+    const keys = Object.keys(obj);
+    if (keys.length > MAX_SCROLL_ENTRIES) {
+      const excess = keys.length - MAX_SCROLL_ENTRIES;
+      for (let i = 0; i < excess; i += 1) {
+        delete obj[keys[i]];
+      }
+    }
     sessionStorage.setItem(SCROLL_KEY, JSON.stringify(obj));
   } catch {
     /* ignore quota/security errors */
@@ -37,12 +45,15 @@ const writeStore = (obj: Record<string, ScrollPosition>): void => {
 
 export const setScrollToSessionStorage = (): void => {
   const store = readStore();
-  store[currentKey()] = getScrollPosition();
+  const key = currentKey();
+  if (store[key]) delete store[key];
+  store[key] = getScrollPosition();
   writeStore(store);
 };
 
 export const setScrollForKey = (key: string, pos?: ScrollPosition): void => {
   const store = readStore();
+  if (store[key]) delete store[key];
   store[key] = pos || getScrollPosition();
   writeStore(store);
 };

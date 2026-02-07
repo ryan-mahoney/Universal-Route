@@ -28,6 +28,11 @@ describe("index.js re-exports", () => {
     expect(typeof API.makeMemoryHistory).toBe("function");
     expect(API.routesHelper).toBeDefined();
     expect(typeof API.routesHelper.prepare).toBe("function");
+    expect(typeof API.handleHistoryChange).toBe("function");
+    expect(typeof API.getScrollPosition).toBe("function");
+    expect(typeof API.setScrollToSessionStorage).toBe("function");
+    expect(typeof API.setScrollForKey).toBe("function");
+    expect(typeof API.getScrollFromSessionStorage).toBe("function");
   });
 
   test("navigate delegates to history push/replace", () => {

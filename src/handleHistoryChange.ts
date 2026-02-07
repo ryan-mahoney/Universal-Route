@@ -45,6 +45,14 @@ const makeUuid = (): string => {
 const INSTALLED = Symbol.for("handleHistoryChange:installed");
 let _inFlight: AbortController | null = null;
 let _latestRequestId: number = 0;
+let _scrollRestoreTimeout: ReturnType<typeof setTimeout> | null = null;
+
+const clearScrollRestoreTimeout = (): void => {
+  if (_scrollRestoreTimeout) {
+    clearTimeout(_scrollRestoreTimeout);
+    _scrollRestoreTimeout = null;
+  }
+};
 
 const originOf = (): string => {
   try {
@@ -81,23 +89,24 @@ export default function handleHistoryChange(
     },
     progress = { start() {}, done() {} }, // optional in tests
   }: HandleHistoryChangeOptions = {},
-): void {
+): () => void {
   if (!history || !fetchImpl) {
-    return;
+    return () => {};
   }
 
   if ((history as any)[INSTALLED]) {
-    return;
+    return () => {};
   }
   (history as any)[INSTALLED] = true;
 
-  history.listen(function ({ location, action }: Update): void {
+  const unlisten = history.listen(function ({ location, action }: Update): void {
     // Abort prior request
     if (_inFlight && typeof _inFlight.abort === "function") {
       try {
         _inFlight.abort();
       } catch {}
     }
+    clearScrollRestoreTimeout();
     const requestId = ++_latestRequestId;
     _inFlight =
       typeof AbortController !== "undefined" ? new AbortController() : null;
@@ -164,14 +173,27 @@ export default function handleHistoryChange(
             const key = (location.pathname || "/") + (location.search || "");
             const prev: ScrollPosition | null = getScrollFromSessionStorage(key);
             if (prev) {
-              setTimeout(function () {
+              _scrollRestoreTimeout = setTimeout(function () {
                 window.scrollTo(prev.x || 0, prev.y || 0);
+                _scrollRestoreTimeout = null;
               }, 250);
             }
           }
         }
       });
   });
+
+  return (): void => {
+    if (typeof unlisten === "function") unlisten();
+    clearScrollRestoreTimeout();
+    if (_inFlight && typeof _inFlight.abort === "function") {
+      try {
+        _inFlight.abort();
+      } catch {}
+    }
+    _inFlight = null;
+    (history as any)[INSTALLED] = false;
+  };
 }
 
 // Test helpers (reset does nothing now because the guard is per-history instance)
@@ -179,7 +201,11 @@ export const __test__: {
   reset: () => void;
   state: () => { inFlight: boolean };
 } = {
-  reset: function (): void {},
+  reset: function (): void {
+    _latestRequestId = 0;
+    _inFlight = null;
+    clearScrollRestoreTimeout();
+  },
   state: function (): { inFlight: boolean } {
     return {
       inFlight: !!_inFlight,

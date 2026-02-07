@@ -1,9 +1,8 @@
 import React, {
   useContext,
-  useEffect,
   useMemo,
   useRef,
-  useState,
+  useSyncExternalStore,
   type AnchorHTMLAttributes,
   type ComponentType,
   type Context,
@@ -45,10 +44,20 @@ interface StoreContextValue {
 
 const appHistory: BrowserHistory | null = history;
 
+const getHistoryOrThrow = (): BrowserHistory => {
+  if (!appHistory) {
+    throw new Error(
+      "History is unavailable in this environment. Use makeMemoryHistory for non-browser usage.",
+    );
+  }
+  return appHistory;
+};
+
 export const navigate = (to: LinkTo, options: NavigateOptions = {}): void => {
   const { replace = false, state } = options;
-  if (replace) appHistory!.replace(to, state);
-  else appHistory!.push(to, state);
+  const activeHistory = getHistoryOrThrow();
+  if (replace) activeHistory.replace(to, state);
+  else activeHistory.push(to, state);
 };
 
 const toHref = (to: LinkTo): string => {
@@ -127,9 +136,10 @@ export const Link: React.FC<LinkProps> = ({
     if (onClick) onClick(e);
     if (!shouldHandleClientNavigation(e, { ...rest, href })) return;
     e.preventDefault();
+    const activeHistory = getHistoryOrThrow();
     const nextTo = toClientPath(to, href);
-    if (replace) appHistory!.replace(nextTo, state);
-    else appHistory!.push(nextTo, state);
+    if (replace) activeHistory.replace(nextTo, state);
+    else activeHistory.push(nextTo, state);
   };
 
   return <a href={href} onClick={handleClick} {...rest} />;
@@ -153,35 +163,39 @@ export const createRouter = (
 
     const preparedRoutes = useMemo(() => helper.prepare(routes), [routes]);
 
-    const currentFromHistory =
+    const readHistoryLocation = (): string =>
       (history?.location?.pathname || "") + (history?.location?.search || "");
-
-    const initialLocation = (state && state.location) || currentFromHistory;
+    const initialLocation = (state && state.location) || readHistoryLocation();
     const lastLocRef = useRef(initialLocation);
-    const [loc, setLoc] = useState(initialLocation);
+    const hasNavigationRef = useRef(false);
+    const getLocationSnapshot = (): string =>
+      hasNavigationRef.current ? readHistoryLocation() : initialLocation;
 
-    useEffect(() => {
-      if (!history || typeof history.listen !== "function") return;
-
-      const unlisten = history.listen(({ location, action }) => {
-        const nextLoc = (location.pathname || "") + (location.search || "");
-        if (nextLoc !== lastLocRef.current) {
-          lastLocRef.current = nextLoc;
-          setLoc(nextLoc);
-          if (typeof dispatch === "function") {
-            dispatch({
-              type: "LOCATION_CHANGED",
-              location: nextLoc,
-              meta: { action },
-            });
+    const loc = useSyncExternalStore(
+      (onStoreChange) => {
+        if (!history || typeof history.listen !== "function") return () => {};
+        const unlisten = history.listen(({ location, action }) => {
+          const nextLoc = (location.pathname || "") + (location.search || "");
+          if (nextLoc !== lastLocRef.current) {
+            lastLocRef.current = nextLoc;
+            hasNavigationRef.current = true;
+            if (typeof dispatch === "function") {
+              dispatch({
+                type: "LOCATION_CHANGED",
+                location: nextLoc,
+                meta: { action },
+              });
+            }
           }
-        }
-      });
-
-      return () => {
-        if (typeof unlisten === "function") unlisten();
-      };
-    }, [dispatch]);
+          onStoreChange();
+        });
+        return () => {
+          if (typeof unlisten === "function") unlisten();
+        };
+      },
+      getLocationSnapshot,
+      getLocationSnapshot,
+    );
 
     const activePathname = (loc || "").split("?")[0];
     const matched = useMemo(

@@ -39,10 +39,9 @@ function installMockFetch({ latency = 120 } = {}) {
 // ../src/router.tsx
 import {
   useContext,
-  useEffect,
   useMemo,
   useRef,
-  useState
+  useSyncExternalStore
 } from "react";
 
 // ../node_modules/@babel/runtime/helpers/esm/extends.js
@@ -309,6 +308,13 @@ var history_default = appHistory;
 // ../src/helper.ts
 var isPreparedRouteArray = (routes) => Array.isArray(routes) && routes.every((route) => typeof route === "object" && typeof route.matcher === "function");
 var escapeRegex = (s) => s.replace(/[-/\\^$*+?.()|[\]{}]/g, "\\$&");
+var decodeParam = (value) => {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
+};
 var compilePath = (path) => {
   if (!path || path === "/") {
     return { regex: /^\/?$/, names: [] };
@@ -365,9 +371,9 @@ var prepare = (routes = []) => {
       const m = regex.exec(pathname);
       if (!m) return null;
       const params = m.groups ? Object.fromEntries(
-        Object.entries(m.groups).map(([k, v]) => [k, decodeURIComponent(v)])
+        Object.entries(m.groups).map(([k, v]) => [k, decodeParam(v)])
       ) : names.reduce((acc, name, i) => {
-        acc[name] = decodeURIComponent(m[i + 1]);
+        acc[name] = decodeParam(m[i + 1]);
         return acc;
       }, {});
       return { params };
@@ -406,6 +412,14 @@ var helper_default = { prepare, match };
 // ../src/router.tsx
 import { jsx } from "react/jsx-runtime";
 var appHistory2 = history_default;
+var getHistoryOrThrow = () => {
+  if (!appHistory2) {
+    throw new Error(
+      "History is unavailable in this environment. Use makeMemoryHistory for non-browser usage."
+    );
+  }
+  return appHistory2;
+};
 var toHref = (to) => {
   if (typeof to === "string") return to;
   const { pathname, search = "", hash = "" } = to;
@@ -461,9 +475,10 @@ var Link = ({
     if (onClick) onClick(e);
     if (!shouldHandleClientNavigation(e, { ...rest, href })) return;
     e.preventDefault();
+    const activeHistory = getHistoryOrThrow();
     const nextTo = toClientPath(to, href);
-    if (replace) appHistory2.replace(nextTo, state);
-    else appHistory2.push(nextTo, state);
+    if (replace) activeHistory.replace(nextTo, state);
+    else activeHistory.push(nextTo, state);
   };
   return /* @__PURE__ */ jsx("a", { href, onClick: handleClick, ...rest });
 };
@@ -474,30 +489,37 @@ var createRouter = (routes, storeContext) => {
     const { pageRefresher } = appState;
     const { state, dispatch } = appState;
     const preparedRoutes = useMemo(() => helper_default.prepare(routes), [routes]);
-    const currentFromHistory = (history_default?.location?.pathname || "") + (history_default?.location?.search || "");
-    const initialLocation = state && state.location || currentFromHistory;
+    const readHistoryLocation = () => (history_default?.location?.pathname || "") + (history_default?.location?.search || "");
+    const initialLocation = state && state.location || readHistoryLocation();
     const lastLocRef = useRef(initialLocation);
-    const [loc, setLoc] = useState(initialLocation);
-    useEffect(() => {
-      if (!history_default || typeof history_default.listen !== "function") return;
-      const unlisten = history_default.listen(({ location: location2, action }) => {
-        const nextLoc = (location2.pathname || "") + (location2.search || "");
-        if (nextLoc !== lastLocRef.current) {
-          lastLocRef.current = nextLoc;
-          setLoc(nextLoc);
-          if (typeof dispatch === "function") {
-            dispatch({
-              type: "LOCATION_CHANGED",
-              location: nextLoc,
-              meta: { action }
-            });
+    const hasNavigationRef = useRef(false);
+    const getLocationSnapshot = () => hasNavigationRef.current ? readHistoryLocation() : initialLocation;
+    const loc = useSyncExternalStore(
+      (onStoreChange) => {
+        if (!history_default || typeof history_default.listen !== "function") return () => {
+        };
+        const unlisten = history_default.listen(({ location: location2, action }) => {
+          const nextLoc = (location2.pathname || "") + (location2.search || "");
+          if (nextLoc !== lastLocRef.current) {
+            lastLocRef.current = nextLoc;
+            hasNavigationRef.current = true;
+            if (typeof dispatch === "function") {
+              dispatch({
+                type: "LOCATION_CHANGED",
+                location: nextLoc,
+                meta: { action }
+              });
+            }
           }
-        }
-      });
-      return () => {
-        if (typeof unlisten === "function") unlisten();
-      };
-    }, [dispatch]);
+          onStoreChange();
+        });
+        return () => {
+          if (typeof unlisten === "function") unlisten();
+        };
+      },
+      getLocationSnapshot,
+      getLocationSnapshot
+    );
     const activePathname = (loc || "").split("?")[0];
     const matched = useMemo(
       () => matchRoute(preparedRoutes, activePathname),
@@ -517,6 +539,9 @@ var createRouter = (routes, storeContext) => {
   };
   return Router;
 };
+
+// ../src/handleHistoryChange.ts
+var INSTALLED = Symbol.for("handleHistoryChange:installed");
 
 // routes.tsx
 import { jsx as jsx2, jsxs } from "react/jsx-runtime";

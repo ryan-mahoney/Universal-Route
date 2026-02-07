@@ -119,4 +119,12 @@ describe("helper.js", () => {
     const { params } = routesHelper.match(prepared, "/users/jane%20doe");
     expect(params).toEqual({ name: "jane doe" });
   });
+
+  test("match() does not throw on malformed URI params", () => {
+    const prepared = routesHelper.prepare([{ path: "/users/:name", element: Dummy }]);
+    expect(() => routesHelper.match(prepared, "/users/%E0%A4%A")).not.toThrow();
+    expect(routesHelper.match(prepared, "/users/%E0%A4%A").params).toEqual({
+      name: "%E0%A4%A",
+    });
+  });
 });

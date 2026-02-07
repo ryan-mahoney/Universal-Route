@@ -41,4 +41,17 @@ describe("scroll.js", () => {
     expect(getScrollFromSessionStorage("/b")).toEqual({ x: 3, y: 4 });
     expect(getScrollFromSessionStorage("/nope")).toBeNull();
   });
+
+  test("evicts oldest scroll entries beyond 100 keys", () => {
+    for (let i = 0; i < 105; i += 1) {
+      setScrollForKey(`/k${i}`, { x: i, y: i });
+    }
+
+    const store = getScrollFromSessionStorage("*");
+    expect(Object.keys(store)).toHaveLength(100);
+    expect(store["/k0"]).toBeUndefined();
+    expect(store["/k4"]).toBeUndefined();
+    expect(store["/k5"]).toEqual({ x: 5, y: 5 });
+    expect(store["/k104"]).toEqual({ x: 104, y: 104 });
+  });
 });
