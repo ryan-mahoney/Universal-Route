@@ -1,7 +1,21 @@
-// mockFetch.js
-export function installMockFetch({ latency = 120 } = {}) {
+type MockPage = {
+  title: string;
+  pageData: Record<string, unknown>;
+};
+
+type InstallMockFetchOptions = {
+  latency?: number;
+};
+
+const toUrlString = (input: RequestInfo | URL): string => {
+  if (typeof input === "string") return input;
+  if (input instanceof URL) return input.toString();
+  return input.url;
+};
+
+export function installMockFetch({ latency = 120 }: InstallMockFetchOptions = {}): void {
   // simple in-memory routes
-  const staticPages = {
+  const staticPages: Record<string, MockPage> = {
     "/": { title: "Home", pageData: { blurb: "Welcome to the demo." } },
     "/about": {
       title: "About",
@@ -10,11 +24,11 @@ export function installMockFetch({ latency = 120 } = {}) {
   };
   const userRoute = /^\/users\/([^/]+)$/;
 
-  globalThis.fetch = async (reqUrl) => {
-    const u = new URL(reqUrl, location.origin);
+  globalThis.fetch = async (reqUrl: RequestInfo | URL): Promise<Response> => {
+    const u = new URL(toUrlString(reqUrl), location.origin);
     const path = u.pathname; // ignore the ?uuid param we add
     let status = 200;
-    let data = staticPages[path];
+    let data: MockPage | undefined = staticPages[path];
 
     if (!data) {
       const m = path.match(userRoute);
@@ -31,9 +45,9 @@ export function installMockFetch({ latency = 120 } = {}) {
     // simulate network
     await new Promise((r) => setTimeout(r, latency));
 
-    return {
+    return new Response(JSON.stringify(data), {
       status,
-      json: async () => data,
-    };
+      headers: { "Content-Type": "application/json" },
+    });
   };
 }

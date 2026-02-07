@@ -3,6 +3,11 @@ import { createContext, useReducer } from "react";
 import { createRoot } from "react-dom/client";
 
 // mockFetch.ts
+var toUrlString = (input) => {
+  if (typeof input === "string") return input;
+  if (input instanceof URL) return input.toString();
+  return input.url;
+};
 function installMockFetch({ latency = 120 } = {}) {
   const staticPages = {
     "/": { title: "Home", pageData: { blurb: "Welcome to the demo." } },
@@ -13,7 +18,7 @@ function installMockFetch({ latency = 120 } = {}) {
   };
   const userRoute = /^\/users\/([^/]+)$/;
   globalThis.fetch = async (reqUrl) => {
-    const u = new URL(reqUrl, location.origin);
+    const u = new URL(toUrlString(reqUrl), location.origin);
     const path = u.pathname;
     let status = 200;
     let data = staticPages[path];
@@ -29,10 +34,10 @@ function installMockFetch({ latency = 120 } = {}) {
       data = { title: "Not Found", pageData: { path } };
     }
     await new Promise((r) => setTimeout(r, latency));
-    return {
+    return new Response(JSON.stringify(data), {
       status,
-      json: async () => data
-    };
+      headers: { "Content-Type": "application/json" }
+    });
   };
 }
 
@@ -324,8 +329,15 @@ var compilePath = (path) => {
   }
   const parts = String(path).split("/").filter(Boolean).map((part) => {
     if (part.startsWith(":")) {
-      const name = part.slice(1);
-      return { src: `(?<${name}>[^/]+)`, name };
+      const raw = part.slice(1).trim();
+      const modifier = raw[raw.length - 1];
+      const hasModifier = modifier === "+" || modifier === "*" || modifier === "?";
+      const name = (hasModifier ? raw.slice(0, -1) : raw).trim();
+      if (!name) {
+        throw new TypeError(`Invalid route param segment "${part}" in path "${path}"`);
+      }
+      const src = modifier === "+" ? "(.+)" : "([^/]+)";
+      return { src, name };
     }
     return { src: escapeRegex(part), name: null };
   });
@@ -370,9 +382,7 @@ var prepare = (routes = []) => {
     const matcher = (pathname) => {
       const m = regex.exec(pathname);
       if (!m) return null;
-      const params = m.groups ? Object.fromEntries(
-        Object.entries(m.groups).map(([k, v]) => [k, decodeParam(v)])
-      ) : names.reduce((acc, name, i) => {
+      const params = names.reduce((acc, name, i) => {
         acc[name] = decodeParam(m[i + 1]);
         return acc;
       }, {});
@@ -552,7 +562,8 @@ var Home = (props) => {
     /* @__PURE__ */ jsxs("nav", { style: { display: "flex", gap: 12 }, children: [
       /* @__PURE__ */ jsx2(Link, { to: "/", children: "Home" }),
       /* @__PURE__ */ jsx2(Link, { to: "/about", children: "About" }),
-      /* @__PURE__ */ jsx2(Link, { to: "/users/42", children: "User 42" })
+      /* @__PURE__ */ jsx2(Link, { to: "/users/42", children: "User 42" }),
+      /* @__PURE__ */ jsx2(Link, { to: "/about/dogs/hounds/buster", children: "About Buster" })
     ] }),
     /* @__PURE__ */ jsx2("pre", { style: { background: "#f6f8fa", padding: 12, marginTop: 16 }, children: JSON.stringify({ state: props }, null, 2) })
   ] });
@@ -564,9 +575,24 @@ var About = (props) => {
     /* @__PURE__ */ jsxs("nav", { style: { display: "flex", gap: 12 }, children: [
       /* @__PURE__ */ jsx2(Link, { to: "/", children: "Home" }),
       /* @__PURE__ */ jsx2(Link, { to: "/about", children: "About" }),
-      /* @__PURE__ */ jsx2(Link, { to: "/users/123", children: "User 123" })
+      /* @__PURE__ */ jsx2(Link, { to: "/users/123", children: "User 123" }),
+      /* @__PURE__ */ jsx2(Link, { to: "/about/dogs/hounds/buster", children: "About Buster" })
     ] }),
     /* @__PURE__ */ jsx2("pre", { style: { background: "#f6f8fa", padding: 12, marginTop: 16 }, children: JSON.stringify({ state: props }, null, 2) })
+  ] });
+};
+var AboutDogs = ({ params }) => {
+  return /* @__PURE__ */ jsxs("div", { style: { padding: 24 }, children: [
+    /* @__PURE__ */ jsx2("h1", { children: "About Dogs" }),
+    /* @__PURE__ */ jsxs("p", { children: [
+      "Params: ",
+      params
+    ] }),
+    /* @__PURE__ */ jsxs("nav", { style: { display: "flex", gap: 12 }, children: [
+      /* @__PURE__ */ jsx2(Link, { to: "/", children: "Home" }),
+      /* @__PURE__ */ jsx2(Link, { to: "/about", children: "About" }),
+      /* @__PURE__ */ jsx2(Link, { to: "/users/123", children: "User 123" })
+    ] })
   ] });
 };
 var User = ({ id }) => {
@@ -585,7 +611,8 @@ var User = ({ id }) => {
 var routesMap = {
   "/": Home,
   "/about": About,
-  "/users/:id": User
+  "/users/:id": User,
+  "/about/dogs/:params+": AboutDogs
 };
 var routes_default = routesMap;
 
@@ -615,13 +642,20 @@ function reducer(state, action) {
 // app.tsx
 import { jsx as jsx3 } from "react/jsx-runtime";
 installMockFetch();
-var StateContext = createContext(null);
+var StateContext = createContext({
+  state: initialState,
+  dispatch: false
+});
 var StateProvider = ({ children }) => {
   const [state, dispatch] = useReducer(reducer, initialState);
   return /* @__PURE__ */ jsx3(StateContext.Provider, { value: { state, dispatch }, children });
 };
 var AppRouter = createRouter(routes_default, StateContext);
-var root = createRoot(document.getElementById("root"));
+var rootElement = document.getElementById("root");
+if (!rootElement) {
+  throw new Error("Missing #root element in demo/index.html");
+}
+var root = createRoot(rootElement);
 root.render(
   /* @__PURE__ */ jsx3(StateProvider, { children: /* @__PURE__ */ jsx3(AppRouter, {}) })
 );

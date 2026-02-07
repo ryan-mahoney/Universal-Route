@@ -2,17 +2,25 @@ import React, { createContext, useReducer } from "react";
 import { createRoot } from "react-dom/client";
 
 // ⬇️ mock backend
-import { installMockFetch } from "./mockFetch.ts";
+import { installMockFetch } from "./mockFetch";
 installMockFetch();
 
-import { createRouter } from "../src/index.ts";
-import routesMap from "./routes.tsx";
-import reducer, { initialState } from "./reducer.ts";
+import { createRouter } from "../src";
+import routesMap from "./routes";
+import reducer, { initialState } from "./reducer";
 
 // --- Store is REQUIRED ---
-export const StateContext = createContext(null);
+type DemoStoreContextValue = {
+  state: Record<string, unknown>;
+  dispatch: React.Dispatch<Record<string, unknown>> | false;
+};
 
-const StateProvider = ({ children }) => {
+export const StateContext = createContext<DemoStoreContextValue>({
+  state: initialState,
+  dispatch: false,
+});
+
+const StateProvider = ({ children }: { children: React.ReactNode }) => {
   const [state, dispatch] = useReducer(reducer, initialState);
   return (
     <StateContext.Provider value={{ state, dispatch }}>
@@ -24,9 +32,14 @@ const StateProvider = ({ children }) => {
 // Router now takes (routes, storeContext)
 const AppRouter = createRouter(routesMap, StateContext);
 
-const root = createRoot(document.getElementById("root"));
+const rootElement = document.getElementById("root");
+if (!rootElement) {
+  throw new Error("Missing #root element in demo/index.html");
+}
+
+const root = createRoot(rootElement);
 root.render(
   <StateProvider>
     <AppRouter />
-  </StateProvider>
+  </StateProvider>,
 );
