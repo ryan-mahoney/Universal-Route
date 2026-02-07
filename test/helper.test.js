@@ -5,6 +5,38 @@ import { render, screen } from "@testing-library/react";
 const Dummy = () => null;
 
 describe("helper.js", () => {
+  test("prepare() normalizes array route object form", () => {
+    const prepared = routesHelper.prepare([
+      { path: "/x", element: Dummy, reducerKey: "slice" },
+    ]);
+
+    expect(prepared).toHaveLength(1);
+    expect(prepared[0]).toEqual(
+      expect.objectContaining({
+        path: "/x",
+        Component: Dummy,
+        reducerKey: "slice",
+      })
+    );
+    expect(typeof prepared[0].matcher).toBe("function");
+  });
+
+  test("prepare() normalizes object map route form", () => {
+    const prepared = routesHelper.prepare({
+      "/x": { Component: Dummy, reducerKey: "slice" },
+    });
+
+    expect(prepared).toHaveLength(1);
+    expect(prepared[0]).toEqual(
+      expect.objectContaining({
+        path: "/x",
+        Component: Dummy,
+        reducerKey: "slice",
+      })
+    );
+    expect(typeof prepared[0].matcher).toBe("function");
+  });
+
   test("prepare() converts a map to prepared routes with matchers", () => {
     const routes = {
       "/": Dummy,
@@ -44,5 +76,31 @@ describe("helper.js", () => {
     // Render and check for the "404" text.
     render(React.createElement(Component));
     expect(screen.getByText("404")).toBeInTheDocument();
+  });
+
+  test("match() wildcard behavior respects route order and supports '*' and '/*'", () => {
+    const Specific = () => null;
+    const Star = () => null;
+    const SlashStar = () => null;
+
+    const specificFirst = routesHelper.prepare([
+      { path: "/users/:id", element: Specific },
+      { path: "*", element: Star },
+    ]);
+    const wildcardFirst = routesHelper.prepare([
+      { path: "*", element: Star },
+      { path: "/users/:id", element: Specific },
+    ]);
+    const slashStar = routesHelper.prepare([{ path: "/*", element: SlashStar }]);
+
+    expect(routesHelper.match(specificFirst, "/users/7").Component).toBe(Specific);
+    expect(routesHelper.match(wildcardFirst, "/users/7").Component).toBe(Star);
+    expect(routesHelper.match(slashStar, "/anything").Component).toBe(SlashStar);
+  });
+
+  test("match() decodes URL-encoded dynamic params", () => {
+    const prepared = routesHelper.prepare([{ path: "/users/:name", element: Dummy }]);
+    const { params } = routesHelper.match(prepared, "/users/jane%20doe");
+    expect(params).toEqual({ name: "jane doe" });
   });
 });
