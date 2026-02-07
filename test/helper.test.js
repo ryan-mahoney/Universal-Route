@@ -127,4 +127,32 @@ describe("helper.js", () => {
       name: "%E0%A4%A",
     });
   });
+
+  test("match() supports :param+ rest parameters for multi-segment capture", () => {
+    const prepared = routesHelper.prepare([
+      { path: "/application/organizations/:params+", element: Dummy },
+      { path: "/opportunities/pipeline/:params+", element: Dummy },
+      { path: "/appointment/:id+", element: Dummy },
+      { path: "/users/:id", element: Dummy },
+    ]);
+
+    expect(
+      routesHelper.match(prepared, "/application/organizations/new").params
+    ).toEqual({ params: "new" });
+    expect(
+      routesHelper.match(prepared, "/application/organizations/123/edit").params
+    ).toEqual({ params: "123/edit" });
+    expect(
+      routesHelper.match(prepared, "/opportunities/pipeline/job/42/candidate/99").params
+    ).toEqual({ params: "job/42/candidate/99" });
+    expect(routesHelper.match(prepared, "/appointment/abc-123").params).toEqual({
+      id: "abc-123",
+    });
+    expect(routesHelper.match(prepared, "/appointment/abc/123").params).toEqual({
+      id: "abc/123",
+    });
+
+    expect(routesHelper.match(prepared, "/users/42").params).toEqual({ id: "42" });
+    expect(routesHelper.match(prepared, "/users/42/extra").Component).not.toBe(Dummy);
+  });
 });
