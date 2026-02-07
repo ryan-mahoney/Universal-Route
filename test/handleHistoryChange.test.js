@@ -87,11 +87,38 @@ describe("handleHistoryChange", () => {
     const progress = { start: jest.fn(), done: jest.fn() };
     const dispatch = jest.fn();
 
-    handleHistoryChange(dispatch, { history, fetchImpl, setTitle, progress });
+    const cleanup = handleHistoryChange(dispatch, { history, fetchImpl, setTitle, progress });
     handleHistoryChange(dispatch, { history, fetchImpl, setTitle, progress });
 
     history.push("/a");
     expect(fetchImpl).toHaveBeenCalledTimes(1);
+    cleanup();
+  });
+
+  test("allows reinstall after cleanup", () => {
+    const history = makeHistory("/");
+    const fetchImpl = jest.fn(() => okResponse({ title: "Home" }));
+    const dispatch = jest.fn();
+
+    const cleanup = handleHistoryChange(dispatch, { history, fetchImpl });
+    cleanup();
+    handleHistoryChange(dispatch, { history, fetchImpl });
+    history.push("/a");
+
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+  });
+
+  test("cleanup unsubscribes listener", () => {
+    const history = makeHistory("/");
+    const fetchImpl = jest.fn(() => okResponse({ title: "Home" }));
+    const dispatch = jest.fn();
+    const cleanup = handleHistoryChange(dispatch, { history, fetchImpl });
+
+    cleanup();
+    history.push("/after-cleanup");
+
+    expect(fetchImpl).not.toHaveBeenCalled();
+    expect(dispatch).not.toHaveBeenCalled();
   });
 
   test("dispatches CHANGE_PAGE for ok/404/5xx and sets title", async () => {
@@ -230,6 +257,25 @@ describe("handleHistoryChange", () => {
     // advance timers to allow delayed scroll restore
     jest.advanceTimersByTime(300);
     expect(window.scrollTo).toHaveBeenCalledWith(7, 9);
+  });
+
+  test("cancels stale scroll restore timeout on rapid navigation", async () => {
+    const history = makeHistory("/");
+    const fetchImpl = jest.fn(() => okResponse({}));
+    const dispatch = jest.fn();
+
+    setScrollForKey("/prev", { x: 7, y: 9 });
+
+    handleHistoryChange(dispatch, { history, fetchImpl });
+
+    history.replace("/prev");
+    await flush();
+    history.push("/next");
+    await flush();
+
+    jest.advanceTimersByTime(300);
+    expect(window.scrollTo).toHaveBeenCalledWith(0, 0);
+    expect(window.scrollTo).not.toHaveBeenCalledWith(7, 9);
   });
 
   test("does not restore scroll on non-PUSH action when no scroll snapshot exists", async () => {

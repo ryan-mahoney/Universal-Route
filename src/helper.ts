@@ -52,6 +52,13 @@ const isPreparedRouteArray = (
   routes.every((route) => typeof route === "object" && typeof (route as PreparedRoute).matcher === "function");
 
 const escapeRegex = (s: string): string => s.replace(/[-/\\^$*+?.()|[\]{}]/g, "\\$&");
+const decodeParam = (value: string): string => {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
+};
 
 // Compile a path pattern like "/users/:id" into a RegExp with named groups.
 // Supports "*" or "/*" catch-all.
@@ -134,10 +141,10 @@ export const prepare = (routes: RoutesInput = []): PreparedRoute[] => {
 
       const params = m.groups
         ? Object.fromEntries(
-            Object.entries(m.groups).map(([k, v]) => [k, decodeURIComponent(v as string)]),
+            Object.entries(m.groups).map(([k, v]) => [k, decodeParam(v as string)]),
           )
         : names.reduce<Record<string, string>>((acc, name, i) => {
-            acc[name] = decodeURIComponent(m[i + 1]);
+            acc[name] = decodeParam(m[i + 1]);
             return acc;
           }, {});
 
