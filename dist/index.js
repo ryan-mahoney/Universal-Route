@@ -1,46 +1,18 @@
-"use strict";
-var __defProp = Object.defineProperty;
-var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
-var __getOwnPropNames = Object.getOwnPropertyNames;
-var __hasOwnProp = Object.prototype.hasOwnProperty;
-var __export = (target, all) => {
-  for (var name in all)
-    __defProp(target, name, { get: all[name], enumerable: true });
-};
-var __copyProps = (to, from, except, desc) => {
-  if (from && typeof from === "object" || typeof from === "function") {
-    for (let key of __getOwnPropNames(from))
-      if (!__hasOwnProp.call(to, key) && key !== except)
-        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
-  }
-  return to;
-};
-var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
-
-// src/index.ts
-var index_exports = {};
-__export(index_exports, {
-  Link: () => Link,
-  appHistory: () => appHistory,
-  createRouter: () => createRouter,
-  getScrollFromSessionStorage: () => getScrollFromSessionStorage,
-  getScrollPosition: () => getScrollPosition,
-  handleHistoryChange: () => handleHistoryChange,
-  makeMemoryHistory: () => makeMemoryHistory,
-  navigate: () => navigate,
-  routesHelper: () => helper_default,
-  setScrollForKey: () => setScrollForKey,
-  setScrollToSessionStorage: () => setScrollToSessionStorage
-});
-module.exports = __toCommonJS(index_exports);
-
 // src/router.tsx
-var import_react = require("react");
+import {
+  useContext,
+  useMemo,
+  useRef,
+  useSyncExternalStore
+} from "react";
 
 // src/history.ts
-var import_history = require("history");
-var appHistory = typeof window !== "undefined" && window.document && typeof window.document.createElement === "function" ? (0, import_history.createBrowserHistory)() : null;
-var makeMemoryHistory = (initialEntries = ["/"]) => (0, import_history.createMemoryHistory)({ initialEntries });
+import {
+  createBrowserHistory,
+  createMemoryHistory
+} from "history";
+var appHistory = typeof window !== "undefined" && window.document && typeof window.document.createElement === "function" ? createBrowserHistory() : null;
+var makeMemoryHistory = (initialEntries = ["/"]) => createMemoryHistory({ initialEntries });
 var history_default = appHistory;
 
 // src/helper.ts
@@ -153,7 +125,7 @@ var match = (routes, pathname) => {
 var helper_default = { prepare, match };
 
 // src/router.tsx
-var import_jsx_runtime = require("react/jsx-runtime");
+import { jsx } from "react/jsx-runtime";
 var appHistory2 = history_default;
 var getHistoryOrThrow = () => {
   if (!appHistory2) {
@@ -229,21 +201,21 @@ var Link = ({
     if (replace) activeHistory.replace(nextTo, state);
     else activeHistory.push(nextTo, state);
   };
-  return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("a", { href, onClick: handleClick, ...rest });
+  return /* @__PURE__ */ jsx("a", { href, onClick: handleClick, ...rest });
 };
 var matchRoute = (routes, pathname) => helper_default.match(routes, pathname);
 var createRouter = (routes, storeContext) => {
   const Router = (props) => {
-    const appState = storeContext && (0, import_react.useContext)(storeContext) || { state: props, dispatch: false };
+    const appState = storeContext && useContext(storeContext) || { state: props, dispatch: false };
     const { pageRefresher } = appState;
     const { state, dispatch } = appState;
-    const preparedRoutes = (0, import_react.useMemo)(() => helper_default.prepare(routes), [routes]);
+    const preparedRoutes = useMemo(() => helper_default.prepare(routes), [routes]);
     const readHistoryLocation = () => (history_default?.location?.pathname || "") + (history_default?.location?.search || "");
     const initialLocation = state && state.location || readHistoryLocation();
-    const lastLocRef = (0, import_react.useRef)(initialLocation);
-    const hasNavigationRef = (0, import_react.useRef)(false);
+    const lastLocRef = useRef(initialLocation);
+    const hasNavigationRef = useRef(false);
     const getLocationSnapshot = () => hasNavigationRef.current ? readHistoryLocation() : initialLocation;
-    const loc = (0, import_react.useSyncExternalStore)(
+    const loc = useSyncExternalStore(
       (onStoreChange) => {
         if (!history_default || typeof history_default.listen !== "function") return () => {
         };
@@ -270,13 +242,13 @@ var createRouter = (routes, storeContext) => {
       getLocationSnapshot
     );
     const activePathname = (loc || "").split("?")[0];
-    const matched = (0, import_react.useMemo)(
+    const matched = useMemo(
       () => matchRoute(preparedRoutes, activePathname),
       [preparedRoutes, activePathname]
     );
     const Component = matched?.Component || (() => null);
     const routeParams = matched?.params || {};
-    return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
+    return /* @__PURE__ */ jsx(
       Component,
       {
         ...state,
@@ -490,8 +462,7 @@ function handleHistoryChange(dispatch, {
     history[INSTALLED] = false;
   };
 }
-// Annotate the CommonJS export names for ESM import in node:
-0 && (module.exports = {
+export {
   Link,
   appHistory,
   createRouter,
@@ -500,8 +471,8 @@ function handleHistoryChange(dispatch, {
   handleHistoryChange,
   makeMemoryHistory,
   navigate,
-  routesHelper,
+  helper_default as routesHelper,
   setScrollForKey,
   setScrollToSessionStorage
-});
+};
 //# sourceMappingURL=index.js.map
