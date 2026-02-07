@@ -13,7 +13,7 @@ routes.js
 ```javascript
 // NPM dependencies
 import React from 'react';
-import { helper } from 'universal-route';
+import { helper } from '@ryanfw/universal-route';
 
 // React component dependencies
 import Home from './components/Home.js';
