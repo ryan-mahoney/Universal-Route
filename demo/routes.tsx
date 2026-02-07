@@ -1,5 +1,5 @@
 import React from "react";
-import { Link } from "../src/index.js";
+import { Link } from "../src/index.ts";
 
 export const Home = (props) => {
   return (
