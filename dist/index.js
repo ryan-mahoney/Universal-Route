@@ -62,8 +62,12 @@ var compilePath = (path) => {
   }
   const parts = String(path).split("/").filter(Boolean).map((part) => {
     if (part.startsWith(":")) {
-      const name = part.slice(1);
-      return { src: `(?<${name}>[^/]+)`, name };
+      const raw = part.slice(1);
+      if (raw.endsWith("+")) {
+        const name = raw.slice(0, -1);
+        return { src: `(?<${name}>.+)`, name };
+      }
+      return { src: `(?<${raw}>[^/]+)`, name: raw };
     }
     return { src: escapeRegex(part), name: null };
   });
