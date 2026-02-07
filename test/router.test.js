@@ -1,7 +1,13 @@
 import React, { act } from "react";
-import { render, screen, waitFor, fireEvent } from "@testing-library/react";
+import {
+  render,
+  screen,
+  waitFor,
+  fireEvent,
+  createEvent,
+} from "@testing-library/react";
 
-import { createRouter, Link } from "../src/router.js";
+import { createRouter, Link, navigate } from "../src/router.js";
 
 // ---- Mock a real-ish shared memory history ----
 jest.mock("../src/history.js", () => {
@@ -59,6 +65,7 @@ const PageA = () => (
 );
 const PageB = () => <h1>Page B</h1>;
 const NotFound = () => <h1>Not Found</h1>;
+const UserPage = ({ id }) => <h1>User {id}</h1>;
 
 const routes = [
   { path: "/a", element: PageA },
@@ -73,6 +80,21 @@ const StateContext = React.createContext({
 });
 
 describe("Router", () => {
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  test("navigate(..., { replace: true }) calls history.replace with state", () => {
+    const replaceSpy = jest.spyOn(mockedHistory, "replace");
+    const pushSpy = jest.spyOn(mockedHistory, "push");
+    const state = { from: "test" };
+
+    navigate("/target", { replace: true, state });
+
+    expect(replaceSpy).toHaveBeenCalledWith("/target", state);
+    expect(pushSpy).not.toHaveBeenCalled();
+  });
+
   test("does NOT dispatch on initial mount (store already hydrated)", () => {
     const dispatch = jest.fn();
     const value = { state: { location: "/a" }, dispatch };
@@ -151,6 +173,24 @@ describe("Router", () => {
     );
   });
 
+  test("<Link replace> routes click through history.replace", async () => {
+    const replaceSpy = jest.spyOn(mockedHistory, "replace");
+    const pushSpy = jest.spyOn(mockedHistory, "push");
+
+    render(
+      <Link replace to="/b" data-testid="replace-link">
+        replace
+      </Link>
+    );
+
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("replace-link"));
+    });
+
+    expect(replaceSpy).toHaveBeenCalledWith("/b", undefined);
+    expect(pushSpy).not.toHaveBeenCalled();
+  });
+
   test("renders catch-all route when no match", async () => {
     await act(async () => {
       mockedHistory.replace("/unknown");
@@ -168,5 +208,166 @@ describe("Router", () => {
     expect(screen.getByText("Not Found")).toBeInTheDocument();
     // No dispatch on mount
     expect(dispatch).not.toHaveBeenCalled();
+  });
+
+  test("forwards dynamic route params to matched component props", async () => {
+    await act(async () => {
+      mockedHistory.replace("/users/42");
+    });
+    const dispatch = jest.fn();
+    const value = { state: { location: "/users/42" }, dispatch };
+    const Router = createRouter(
+      [
+        { path: "/users/:id", element: UserPage },
+        { path: "*", element: NotFound },
+      ],
+      StateContext
+    );
+
+    render(
+      <StateContext.Provider value={value}>
+        <Router />
+      </StateContext.Provider>
+    );
+
+    expect(screen.getByText("User 42")).toBeInTheDocument();
+  });
+
+  test("throws TypeError when Link to is not a string or location object", () => {
+    expect(() => render(<Link to={42}>bad</Link>)).toThrow(TypeError);
+  });
+
+  test("throws TypeError when location object pathname is missing", () => {
+    expect(() => render(<Link to={{ search: "?x=1" }}>bad</Link>)).toThrow(TypeError);
+  });
+
+  test("throws TypeError when location object pathname is empty", () => {
+    expect(() => render(<Link to={{ pathname: "" }}>bad</Link>)).toThrow(TypeError);
+  });
+
+  test("does not intercept modified, non-left, or already-prevented clicks", async () => {
+    const pushSpy = jest.spyOn(mockedHistory, "push");
+    const replaceSpy = jest.spyOn(mockedHistory, "replace");
+
+    render(
+      <Link to="#guarded" data-testid="guard-link">
+        guarded
+      </Link>
+    );
+
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("guard-link"), { metaKey: true });
+      fireEvent.click(screen.getByTestId("guard-link"), { ctrlKey: true });
+      fireEvent.click(screen.getByTestId("guard-link"), { shiftKey: true });
+      fireEvent.click(screen.getByTestId("guard-link"), { altKey: true });
+      fireEvent.click(screen.getByTestId("guard-link"), { button: 1 });
+      const preventedEvent = createEvent.click(screen.getByTestId("guard-link"));
+      preventedEvent.preventDefault();
+      fireEvent(screen.getByTestId("guard-link"), preventedEvent);
+    });
+
+    expect(pushSpy).not.toHaveBeenCalled();
+    expect(replaceSpy).not.toHaveBeenCalled();
+  });
+
+  test("non-intercept case keeps default prevented event and skips navigation", async () => {
+    const pushSpy = jest.spyOn(mockedHistory, "push");
+
+    render(
+      <Link to="#no-intercept" data-testid="no-intercept-link">
+        no intercept
+      </Link>
+    );
+
+    const event = createEvent.click(screen.getByTestId("no-intercept-link"));
+    event.preventDefault();
+
+    await act(async () => {
+      fireEvent(screen.getByTestId("no-intercept-link"), event);
+    });
+
+    expect(event.defaultPrevented).toBe(true);
+    expect(pushSpy).not.toHaveBeenCalled();
+  });
+
+  test("supports object-style to with pathname, search, and hash", async () => {
+    const pushSpy = jest.spyOn(mockedHistory, "push");
+    const to = { pathname: "/b", search: "?x=1", hash: "#section" };
+
+    render(
+      <Link to={to} data-testid="object-link">
+        object
+      </Link>
+    );
+
+    const link = screen.getByTestId("object-link");
+    expect(link.getAttribute("href")).toBe("/b?x=1#section");
+
+    await act(async () => {
+      fireEvent.click(link);
+    });
+
+    expect(pushSpy).toHaveBeenCalledWith(to, undefined);
+  });
+
+  test("does not intercept protocol-relative URLs", async () => {
+    const pushSpy = jest.spyOn(mockedHistory, "push");
+
+    render(
+      <Link to="//example.com/out" data-testid="proto-relative-link">
+        external
+      </Link>
+    );
+
+    const link = screen.getByTestId("proto-relative-link");
+    const event = createEvent.click(link);
+
+    await act(async () => {
+      fireEvent(link, event);
+    });
+
+    expect(event.defaultPrevented).toBe(false);
+    expect(pushSpy).not.toHaveBeenCalled();
+  });
+
+  test("does not intercept absolute cross-origin URLs", async () => {
+    const pushSpy = jest.spyOn(mockedHistory, "push");
+
+    render(
+      <Link to="https://example.com/out" data-testid="cross-origin-link">
+        external
+      </Link>
+    );
+
+    const link = screen.getByTestId("cross-origin-link");
+    const event = createEvent.click(link);
+
+    await act(async () => {
+      fireEvent(link, event);
+    });
+
+    expect(event.defaultPrevented).toBe(false);
+    expect(pushSpy).not.toHaveBeenCalled();
+  });
+
+  test("intercepts absolute same-origin URLs and pushes client path", async () => {
+    const pushSpy = jest.spyOn(mockedHistory, "push");
+    const sameOriginHref = `${window.location.origin}/b?x=1#section`;
+
+    render(
+      <Link to={sameOriginHref} data-testid="same-origin-link">
+        same origin
+      </Link>
+    );
+
+    const link = screen.getByTestId("same-origin-link");
+    const event = createEvent.click(link);
+
+    await act(async () => {
+      fireEvent(link, event);
+    });
+
+    expect(event.defaultPrevented).toBe(true);
+    expect(pushSpy).toHaveBeenCalledWith("/b?x=1#section", undefined);
   });
 });

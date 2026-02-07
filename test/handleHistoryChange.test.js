@@ -67,6 +67,19 @@ describe("handleHistoryChange", () => {
     __test__.reset();
   });
 
+  test("returns early when required dependencies are missing", () => {
+    const dispatch = jest.fn();
+    const history = makeHistory("/");
+    const listenSpy = jest.spyOn(history, "listen");
+
+    handleHistoryChange(dispatch, { history: null, fetchImpl: jest.fn() });
+    handleHistoryChange(dispatch, { history, fetchImpl: null });
+    history.push("/ignored");
+
+    expect(listenSpy).not.toHaveBeenCalled();
+    expect(dispatch).not.toHaveBeenCalled();
+  });
+
   test("registers only once", () => {
     const history = makeHistory("/");
     const fetchImpl = jest.fn(() => okResponse({ title: "Home" }));
@@ -149,6 +162,29 @@ describe("handleHistoryChange", () => {
     );
   });
 
+  test("dispatches CHANGE_PAGE with current path when response json parsing fails", async () => {
+    const history = makeHistory("/");
+    const fetchImpl = jest.fn(() =>
+      Promise.resolve({
+        status: 200,
+        json: () => Promise.reject(new Error("bad json")),
+      })
+    );
+    const dispatch = jest.fn();
+
+    handleHistoryChange(dispatch, { history, fetchImpl });
+    history.push("/json-failure");
+    await flush();
+
+    expect(dispatch).toHaveBeenCalledTimes(1);
+    expect(dispatch).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: "CHANGE_PAGE",
+        data: expect.objectContaining({ location: "/json-failure" }),
+      })
+    );
+  });
+
   test("aborts in-flight fetch on new navigation", async () => {
     const history = makeHistory("/");
     let aborted = false;
@@ -196,6 +232,19 @@ describe("handleHistoryChange", () => {
     expect(window.scrollTo).toHaveBeenCalledWith(7, 9);
   });
 
+  test("does not restore scroll on non-PUSH action when no scroll snapshot exists", async () => {
+    const history = makeHistory("/");
+    const fetchImpl = jest.fn(() => okResponse({ title: "S" }));
+    const dispatch = jest.fn();
+
+    handleHistoryChange(dispatch, { history, fetchImpl });
+    history.replace("/no-scroll");
+    await flush();
+    jest.advanceTimersByTime(300);
+
+    expect(window.scrollTo).not.toHaveBeenCalled();
+  });
+
   test("includes a uuid query param in request URL", async () => {
     const history = makeHistory("/");
     const fetchImpl = jest.fn((url) => {
@@ -210,5 +259,54 @@ describe("handleHistoryChange", () => {
     handleHistoryChange(dispatch, { history, fetchImpl, setTitle, progress });
     history.push("/with-uuid");
     await flush(); // flush both microtasks
+  });
+
+  test("ignores stale responses when an earlier request resolves after a newer navigation", async () => {
+    const history = makeHistory("/");
+    let resolveSlow;
+    let resolveFast;
+    const slow = new Promise((resolve) => {
+      resolveSlow = resolve;
+    });
+    const fast = new Promise((resolve) => {
+      resolveFast = resolve;
+    });
+    const fetchImpl = jest
+      .fn()
+      .mockImplementationOnce(() => slow)
+      .mockImplementationOnce(() => fast);
+    const setTitle = jest.fn();
+    const progress = { start: jest.fn(), done: jest.fn() };
+    const dispatch = jest.fn();
+
+    handleHistoryChange(dispatch, { history, fetchImpl, setTitle, progress });
+
+    history.push("/slow");
+    history.push("/fast");
+
+    resolveFast({
+      status: 200,
+      json: async () => ({ title: "Fast" }),
+    });
+    await flush();
+
+    expect(dispatch).toHaveBeenCalledTimes(1);
+    expect(dispatch).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: "CHANGE_PAGE",
+        data: expect.objectContaining({ location: "/fast", title: "Fast" }),
+      })
+    );
+    expect(setTitle).toHaveBeenCalledTimes(1);
+    expect(setTitle).toHaveBeenCalledWith("Fast");
+
+    resolveSlow({
+      status: 200,
+      json: async () => ({ title: "Slow" }),
+    });
+    await flush();
+
+    expect(dispatch).toHaveBeenCalledTimes(1);
+    expect(setTitle).toHaveBeenCalledTimes(1);
   });
 });
