@@ -21,6 +21,7 @@ const toHref = (to) => {
 };
 
 const isHttpLikeHref = (href) => {
+  if (href.startsWith("//")) return false;
   if (
     href.startsWith("/") ||
     href.startsWith("./") ||
@@ -33,7 +34,24 @@ const isHttpLikeHref = (href) => {
   const protocolMatch = href.match(/^([a-zA-Z][a-zA-Z\d+.-]*):/);
   if (!protocolMatch) return true;
   const protocol = protocolMatch[1].toLowerCase();
-  return protocol === "http" || protocol === "https";
+  if (protocol !== "http" && protocol !== "https") return false;
+  if (typeof window === "undefined" || !window.location) return false;
+  try {
+    return new URL(href, window.location.href).origin === window.location.origin;
+  } catch {
+    return false;
+  }
+};
+
+const toClientPath = (to, href) => {
+  if (typeof to !== "string") return to;
+  if (!/^https?:/i.test(href)) return to;
+  try {
+    const url = new URL(href, window.location.href);
+    return `${url.pathname}${url.search}${url.hash}`;
+  } catch {
+    return to;
+  }
 };
 
 const shouldHandleClientNavigation = (event, anchorProps) => {
@@ -61,8 +79,9 @@ export const Link = ({ to, replace = false, state, onClick, ...rest }) => {
     if (onClick) onClick(e);
     if (!shouldHandleClientNavigation(e, { ...rest, href })) return;
     e.preventDefault();
-    if (replace) history.replace(to, state);
-    else history.push(to, state);
+    const nextTo = toClientPath(to, href);
+    if (replace) history.replace(nextTo, state);
+    else history.push(nextTo, state);
   };
   return <a href={href} onClick={handleClick} {...rest} />;
 };

@@ -309,4 +309,65 @@ describe("Router", () => {
 
     expect(pushSpy).toHaveBeenCalledWith(to, undefined);
   });
+
+  test("does not intercept protocol-relative URLs", async () => {
+    const pushSpy = jest.spyOn(mockedHistory, "push");
+
+    render(
+      <Link to="//example.com/out" data-testid="proto-relative-link">
+        external
+      </Link>
+    );
+
+    const link = screen.getByTestId("proto-relative-link");
+    const event = createEvent.click(link);
+
+    await act(async () => {
+      fireEvent(link, event);
+    });
+
+    expect(event.defaultPrevented).toBe(false);
+    expect(pushSpy).not.toHaveBeenCalled();
+  });
+
+  test("does not intercept absolute cross-origin URLs", async () => {
+    const pushSpy = jest.spyOn(mockedHistory, "push");
+
+    render(
+      <Link to="https://example.com/out" data-testid="cross-origin-link">
+        external
+      </Link>
+    );
+
+    const link = screen.getByTestId("cross-origin-link");
+    const event = createEvent.click(link);
+
+    await act(async () => {
+      fireEvent(link, event);
+    });
+
+    expect(event.defaultPrevented).toBe(false);
+    expect(pushSpy).not.toHaveBeenCalled();
+  });
+
+  test("intercepts absolute same-origin URLs and pushes client path", async () => {
+    const pushSpy = jest.spyOn(mockedHistory, "push");
+    const sameOriginHref = `${window.location.origin}/b?x=1#section`;
+
+    render(
+      <Link to={sameOriginHref} data-testid="same-origin-link">
+        same origin
+      </Link>
+    );
+
+    const link = screen.getByTestId("same-origin-link");
+    const event = createEvent.click(link);
+
+    await act(async () => {
+      fireEvent(link, event);
+    });
+
+    expect(event.defaultPrevented).toBe(true);
+    expect(pushSpy).toHaveBeenCalledWith("/b?x=1#section", undefined);
+  });
 });
